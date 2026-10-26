@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5E6A7" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#94721D" />
+    </linearGradient>
+  </defs>
+  <polygon points="50,5 92,27 92,73 50,95 8,73 8,27" stroke="url(#goldGrad)" stroke-width="4" fill="#0A0E17" />
+  <path d="M38 30 H54 C61 30 66 35 66 41 C66 47 61 52 54 52 H38 V30 Z" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M38 52 V70" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" />
+  <path d="M52 52 L66 70" stroke="url(#goldGrad)" stroke-width="5" stroke-linecap="round" />
+</svg>
