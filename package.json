@@ -1,0 +1,28 @@
+{
+  "name": "riyadvi-digital-experience",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Riyadvi Software Technologies - Modern 3D Corporate Digital Platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "build": "npm run build --prefix frontend",
+    "seed": "npm run seed --prefix backend",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "threejs",
+    "react",
+    "vite",
+    "express",
+    "mongodb",
+    "gsap",
+    "digital-transformation"
+  ],
+  "author": "Riyadvi Software Technologies",
+  "license": "UNLICENSED"
+}
