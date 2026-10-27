@@ -167,9 +167,9 @@ export const ServiceDetailPage = () => {
                 <Cpu className="w-5 h-5 text-gold-400" />
                 Specialized Technology Stack
               </h4>
-              <div className="flex flex-wrap gap-2">
+              <div ref={stackRef} className="flex flex-wrap gap-2">
                 {service.technologyStack?.map((t, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-lg bg-black border border-slate-800 text-xs text-gold-400 font-mono font-semibold">
+                  <span key={i} data-reveal-item className="px-3 py-1.5 rounded-lg bg-black border border-slate-800 text-xs text-gold-400 font-mono font-semibold">
                     {t}
                   </span>
                 ))}
