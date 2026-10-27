@@ -170,9 +170,9 @@ export const AboutPage = () => {
             Company Milestones Since 2021
           </h3>
 
-          <div className="space-y-6">
+          <div ref={milestonesRef} className="space-y-6">
             {milestones.map((m, idx) => (
-              <div key={m.year} className="flex flex-col sm:flex-row gap-4 sm:gap-8 pb-6 border-b border-slate-800/80 last:border-0 last:pb-0">
+              <div key={m.year} data-reveal-item className="flex flex-col sm:flex-row gap-4 sm:gap-8 pb-6 border-b border-slate-800/80 last:border-0 last:pb-0">
                 <span className="text-2xl font-black text-gradient-gold font-mono shrink-0 w-24">
                   {m.year}
                 </span>
@@ -194,9 +194,9 @@ export const AboutPage = () => {
             description="Accolades celebrating our relentless focus on design excellence and technical execution."
           />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={awardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {awards.map((award, i) => (
-              <div key={i} className="glass-card p-6 rounded-2xl border-gold-500/15 space-y-3 text-center">
+              <div key={i} data-reveal-item className="glass-card p-6 rounded-2xl border-gold-500/15 space-y-3 text-center">
                 <div className="w-12 h-12 rounded-full bg-gold-500/10 text-gold-400 mx-auto flex items-center justify-center border border-gold-500/25">
                   <Award className="w-6 h-6" />
                 </div>
