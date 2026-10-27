@@ -6,12 +6,17 @@ import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import InteractiveModel from '../../components/3d/InteractiveModel';
 import { getServiceBySlug, getProjects } from '../../lib/api';
+import useScrollReveal from '../../hooks/useScrollReveal';
 
 export const ServiceDetailPage = () => {
   const { slug } = useParams();
   const [service, setService] = useState(null);
   const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const featuresRef = useScrollReveal({ stagger: 0.1, y: 28 });
+  const processRef = useScrollReveal({ stagger: 0.12, y: 28 });
+  const stackRef = useScrollReveal({ stagger: 0.06, y: 24 });
 
   useEffect(() => {
     setLoading(true);

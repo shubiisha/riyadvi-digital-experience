@@ -216,9 +216,9 @@ export const AboutPage = () => {
             description="Engineers, creative technologists, and digital transformation strategists leading our disciplines."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div ref={teamRef} className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, i) => (
-              <div key={i} className="glass-card rounded-2xl overflow-hidden border-slate-800 glass-card-hover">
+              <div key={i} data-reveal-item className="glass-card rounded-2xl overflow-hidden border-slate-800 glass-card-hover">
                 <div className="h-64 overflow-hidden bg-obsidian-950">
                   <img src={member.image} alt={member.name} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500" />
                 </div>
