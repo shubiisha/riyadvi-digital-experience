@@ -184,17 +184,35 @@ In compliance with Section 7 of the assignment specification:
 ---
 
 ## 10. 3D Libraries Used
-- **Three.js (`^0.164.1`)**: Powers the real-time WebGL 3D canvas experiences:
-  - **Hero Scene (`DigitalEcosystem.jsx`)**: Metallic wireframe icosahedrons, floating gold particles, orbital rings, and mouse parallax.
-  - **Technology Constellation (`TechnologyOrbit.jsx`)**: 3D planetary rings with interactive technology nodes, drag-to-rotate controls, and node raycasting.
-  - **Case Study Visualizer (`InteractiveModel.jsx`)**: 360-degree rotatable 3D product geometries (Wanaromah perfume flacon, Laxmi celestial sphere, geometric gemstone).
+- **Three.js (`^0.164.1`)**: Powers every real-time WebGL 3D canvas experience. Raw Three.js (not R3F) is used so the render loop, resource disposal and raycasting are explicit and auditable.
+  - **Hero Scene (`components/3d/DigitalEcosystem.jsx`)** — Home: metallic wireframe icosahedrons, an inner octahedron core, additive-blended gold particle field, orbital rings, and mouse parallax / hover response.
+  - **Technology Constellation (`components/3d/TechnologyOrbit.jsx`)** — Home "Technology Ecosystem": a gold dodecahedron core with three orbiting rings whose nodes are raycast-picked on click to focus a technology.
+  - **Case Study Visualizer (`components/3d/InteractiveModel.jsx`)** — Portfolio case studies: rotatable, wireframe-toggleable 3D product geometries (Wanaromah perfume flacon, Laxmi celestial sphere, geometric gemstone).
+  - **Service Hero 3D (`ServiceDetailPage.jsx`)** — Service pages reuse the same visualizer with a per-service `modelType`, so all six service pages render a distinct interactive object.
+  - **About 3D (`AboutPage.jsx`)** — About page mounts the rotatable model to support the company timeline narrative.
+  - **Shared runtime (`components/3d/SceneCanvas.jsx`)**: owns the renderer lifecycle — resize handling, pixel-ratio capping (`min(devicePixelRatio, 2)`), animation-frame cancellation, and full geometry/material/renderer disposal on unmount. It renders `SceneFallback` when WebGL is unavailable.
 
 ---
 
 ## 11. Animation Libraries Used
-- **Framer Motion (`^11.1.7`)**: Powers fluid page transitions, staggered entrance animations, and interactive UI micro-states.
-- **Canvas Confetti (`^1.9.3`)**: Delivers celebratory visual feedback upon submitting enquiries, consultations, and diagnostic assessments.
-- **Tailwind CSS Transitions & Custom Keyframes**: Shimmer effects, slow rotation, and gold pulse glows.
+Five of the assignment's mandated animation technologies are meaningfully implemented:
+- **GSAP (`^3.15.0`)** — Core timeline engine for scroll-driven storytelling in the Digital Transformation journey (`TransformationSection.jsx`), where each stage (Challenge → Strategy → Design → Technology → Launch → Growth) is a scrubbed timeline.
+- **GSAP ScrollTrigger (`^3.15.0`)** — Drives every scroll-position dependency: the transformation journey, the reusable `useScrollReveal` hook (entrance reveals for About milestones/values/team/awards and Service features/process/stack), and the `ScrollTrigger.refresh()` calls that keep trigger positions correct after fonts and lazy images settle.
+- **Lenis (`^1.3.27`)** — Smooth, momentum-based scrolling wired into GSAP's ticker (`lib/scrollProvider.jsx`) so Lenis and ScrollTrigger share a single clock and scrubbed timelines never desync from the real scrollbar. Disabled entirely for `prefers-reduced-motion` users, who keep native scrolling.
+- **Framer Motion / Motion (`^11.1.7`)** — Page transitions between routes (`layout/PageTransition.jsx`), staggered entrance animations, and UI micro-states (hover, tap, expand).
+- **Canvas Confetti (`^1.9.3`)** — Celebratory feedback on successful enquiry, consultation, and diagnostic submissions.
+
+### 3D & animation coverage (not limited to the hero)
+| Surface | Technology |
+| --- | --- |
+| Home — hero | Three.js interactive ecosystem (cursor + hover + scroll reactive) |
+| Home — digital transformation | GSAP ScrollTrigger scrubbed storytelling |
+| Home — technology ecosystem | Three.js orbit constellation with raycast picking |
+| Services — all 6 detail pages | Three.js rotatable model + GSAP reveal |
+| Portfolio — case studies | Three.js interactive product visualizer |
+| About | Three.js model + GSAP timeline reveals |
+
+Mobile strategy: `SceneCanvas` detects reduced-power devices / failed WebGL context and swaps to the `SceneFallback` static-gradient alternative; GSAP and Lenis honour `prefers-reduced-motion`; pixel ratio is capped at 2 to protect mobile GPUs.
 
 ---
 
@@ -214,8 +232,11 @@ In compliance with Section 7 of the assignment specification:
 ---
 
 ## 14. Known Limitations
-- The simulated upload service stores references to documents rather than uploading to an external AWS S3 bucket.
-- The email service logs email dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
+- **Database dual-mode**: the backend attempts a MongoDB connection on boot; if `MONGODB_URI` is unreachable it falls back to a resilient in-memory datastore seeded from `backend/scripts/seed.js`. This keeps the demo fully functional without a local database, but data is **not persisted across restarts** unless a real MongoDB instance is provided. The Mongoose models and controllers are the same in both modes.
+- **Simulated upload service**: stores document references rather than uploading to an external S3 bucket.
+- **Email service**: logs dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
+- **Job-board integrations** (LinkedIn / Indeed / Naukri) are not live — the careers data is curated in-repo.
+- **Blog/CMS**: the blog is backed by structured in-repo data shaped for a future Strapi/Sanity/WordPress swap, but no external CMS is connected yet.
 
 ---
 
