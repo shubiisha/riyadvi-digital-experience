@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const fs = require('fs');
 const env = require('./config/env');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const notFound = require('./middleware/notFound');
@@ -34,6 +35,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files for simulated uploads/downloads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Serve the built frontend (single-origin deployment) -----------------------
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist, {
+    maxAge: '1y',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
+    },
+  }));
+}
 
 // General rate limiter
 app.use('/api', generalLimiter);
