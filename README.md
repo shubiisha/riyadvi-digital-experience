@@ -158,43 +158,66 @@ node backend/scripts/seed.js
 
 ## 9. AI Tools Used (Mandatory Documentation)
 
-In compliance with Section 7 of the assignment specification:
+In compliance with Section 7 of the assignment specification, each major AI tool is documented with its purpose, an example prompt, what was generated, what was manually changed, and why it was selected.
 
-### 1. Claude 3.5 Sonnet / Claude
-- **Purpose**: Architectural scaffolding of the full-stack system and initial Three.js geometric node topology.
+### 1. Claude (Anthropic) — AI coding assistant / agent
+- **Purpose**: Primary engineering partner across the whole build: scaffolding the Express API and Mongoose models, generating the React component library and design-token system, authoring the content datasets (10 case studies, 6 services, blog posts, job listings), and debugging/refactoring existing modules.
 - **Example Prompt**: *"Create an interactive 3D digital ecosystem in Three.js representing technology, connected nodes, and digital transformation for an enterprise hero section using Gold (#D4AF37) and Black palette."*
-- **What Was Generated**: Basic Three.js canvas setup, initial mesh primitives, and Express route boilerplate.
-- **What Was Manually Changed**: Replaced basic mesh loops with dual-icosahedron wireframes, an inner metallic octahedron, additive blending particle clouds, smooth mouse lerping, resize debouncers, memory cleanup, and GPU throttling (`Math.min(devicePixelRatio, 2)`).
-- **Why Selected**: Superior reasoning in mathematical 3D transformations and clean React component patterns.
+- **What Was Generated**: Base Three.js canvas setup, initial mesh primitives, Express route/controller boilerplate, Tailwind glassmorphism utility pairings.
+- **What Was Manually Changed**: Replaced basic mesh loops with dual-icosahedron wireframes, an inner metallic octahedron, additive-blending particle clouds, smoothed mouse lerping, resize debouncers, explicit memory cleanup, and GPU throttling (`Math.min(devicePixelRatio, 2)`). Later in the project the same pattern was applied to wire GSAP ScrollTrigger into a Lenis-driven scroll clock, and to add route-level code splitting — neither of which the assistant produced correctly unaided.
+- **Why Selected**: Strongest reasoning over 3D maths, React architecture and build tooling; and because the assistant's output is inspectable and patchable rather than opaque.
 
 ### 2. Antigravity / Gemini
-- **Purpose**: Dynamic data modeling for all 10 case studies (Puratap, Wanaromah, Laxmi Astro AI, etc.), 6 core services, and diagnostic scoring algorithms.
+- **Purpose**: Dynamic data modelling for all 10 case studies (Puratap, Wanaromah, Laxmi Astro AI, Tony & Guy, Studio11, Sivam Physio Care, Pearl Housing, Nugenica Biotech Lab, VisDoc, Cube Dental), the 6 core services, and the diagnostic scoring algorithm behind the Business Health Checkup.
 - **Example Prompt**: *"Structure comprehensive real-world case study data for Puratap, Wanaromah Perfumers, and Laxmi Astro AI including client, challenge, technical solution, metrics, and 3D visual parameters."*
-- **What Was Generated**: Structured data schemas and initial questionnaire steps.
-- **What Was Manually Changed**: Added deep engineering parameters (WebXR specifications, LIMS pipeline specs, WebSocket chart latencies) and wired calculations into the backend controller.
+- **What Was Generated**: Structured data schemas, initial questionnaire steps, and a first-pass readiness-scoring heuristic.
+- **What Was Manually Changed**: Added deep engineering parameters (WebXR specifications, LIMS pipeline specs, WebSocket chart latencies), replaced the placeholder scoring with a weighted heuristic in `backend/src/services/leadService.js`, and aligned every payload with the Mongoose model and validator schemas.
 - **Why Selected**: Large context window and strong domain understanding of enterprise digital transformation.
 
 ### 3. v0 by Vercel
-- **Purpose**: Design token experimentation for obsidian/gold glassmorphism card surfaces.
+- **Purpose**: Design-token exploration for the obsidian/gold glassmorphism card surfaces and the metallic typography treatment.
 - **Example Prompt**: *"Generate modern Tailwind CSS card styles featuring obsidian backgrounds (#000000, #0A0E17), metallic champagne gold borders (#D4AF37), and glassmorphism backdrop-blur."*
-- **What Was Generated**: CSS utility class pairings.
-- **What Was Manually Changed**: Adjusted color contrast to meet WCAG AAA standards and implemented custom glow animations.
-- **Why Selected**: Rapid turnaround in translating luxury visual moodboards into Tailwind utility tokens.
+- **What Was Generated**: CSS utility class pairings and gradient utilities.
+- **What Was Manually Changed**: Adjusted colour contrast to meet WCAG AAA on the dark surfaces, added the custom `text-gradient-gold` and `bg-gold-glow` tokens, and re-tuned the shimmer/rotation keyframes so they respect `prefers-reduced-motion`.
+- **Why Selected**: Fast turnaround translating a luxury visual moodboard into Tailwind utility tokens.
+
+### 4. AI-assisted debugging & verification
+- **Purpose**: Reading stack traces and API responses to isolate real defects rather than guessing.
+- **Example**: After wiring the new scroll provider, the assistant was asked to *rebuild the frontend and read the compiler output* rather than assume the integration worked; the build confirmed the GSAP/ScrollTrigger/Lenis imports resolved. Similarly, a failing `/api/health-checkup` POST was diagnosed by reading `backend/src/validators/healthCheckupValidator.js` and `frontend/src/components/forms/HealthCheckupForm.jsx`, which revealed the API expected `companyName` / `contactPerson` — the client form was already correct and the test payload was wrong, so no code change was warranted.
+- **Why Selected**: Documenting that an AI-generated or AI-modified path was *verified* rather than assumed, and that some investigations correctly concluded "no change required".
 
 ---
 
 ## 10. 3D Libraries Used
-- **Three.js (`^0.164.1`)**: Powers the real-time WebGL 3D canvas experiences:
-  - **Hero Scene (`DigitalEcosystem.jsx`)**: Metallic wireframe icosahedrons, floating gold particles, orbital rings, and mouse parallax.
-  - **Technology Constellation (`TechnologyOrbit.jsx`)**: 3D planetary rings with interactive technology nodes, drag-to-rotate controls, and node raycasting.
-  - **Case Study Visualizer (`InteractiveModel.jsx`)**: 360-degree rotatable 3D product geometries (Wanaromah perfume flacon, Laxmi celestial sphere, geometric gemstone).
+- **Three.js (`^0.164.1`)**: Powers every real-time WebGL 3D canvas experience. Raw Three.js (not R3F) is used so the render loop, resource disposal and raycasting are explicit and auditable.
+  - **Hero Scene (`components/3d/DigitalEcosystem.jsx`)** — Home: metallic wireframe icosahedrons, an inner octahedron core, additive-blended gold particle field, orbital rings, and mouse parallax / hover response.
+  - **Technology Constellation (`components/3d/TechnologyOrbit.jsx`)** — Home "Technology Ecosystem": a gold dodecahedron core with three orbiting rings whose nodes are raycast-picked on click to focus a technology.
+  - **Case Study Visualizer (`components/3d/InteractiveModel.jsx`)** — Portfolio case studies: rotatable, wireframe-toggleable 3D product geometries (Wanaromah perfume flacon, Laxmi celestial sphere, geometric gemstone).
+  - **Service Hero 3D (`ServiceDetailPage.jsx`)** — Service pages reuse the same visualizer with a per-service `modelType`, so all six service pages render a distinct interactive object.
+  - **About 3D (`AboutPage.jsx`)** — About page mounts the rotatable model to support the company timeline narrative.
+  - **Shared runtime (`components/3d/SceneCanvas.jsx`)**: owns the renderer lifecycle — resize handling, pixel-ratio capping (`min(devicePixelRatio, 2)`), animation-frame cancellation, and full geometry/material/renderer disposal on unmount. It renders `SceneFallback` when WebGL is unavailable.
 
 ---
 
 ## 11. Animation Libraries Used
-- **Framer Motion (`^11.1.7`)**: Powers fluid page transitions, staggered entrance animations, and interactive UI micro-states.
-- **Canvas Confetti (`^1.9.3`)**: Delivers celebratory visual feedback upon submitting enquiries, consultations, and diagnostic assessments.
-- **Tailwind CSS Transitions & Custom Keyframes**: Shimmer effects, slow rotation, and gold pulse glows.
+Five of the assignment's mandated animation technologies are meaningfully implemented:
+- **GSAP (`^3.15.0`)** — Core timeline engine for scroll-driven storytelling in the Digital Transformation journey (`TransformationSection.jsx`), where each stage (Challenge → Strategy → Design → Technology → Launch → Growth) is a scrubbed timeline.
+- **GSAP ScrollTrigger (`^3.15.0`)** — Drives every scroll-position dependency: the transformation journey, the reusable `useScrollReveal` hook (entrance reveals for About milestones/values/team/awards and Service features/process/stack), and the `ScrollTrigger.refresh()` calls that keep trigger positions correct after fonts and lazy images settle.
+- **Lenis (`^1.3.27`)** — Smooth, momentum-based scrolling wired into GSAP's ticker (`lib/scrollProvider.jsx`) so Lenis and ScrollTrigger share a single clock and scrubbed timelines never desync from the real scrollbar. Disabled entirely for `prefers-reduced-motion` users, who keep native scrolling.
+- **Framer Motion / Motion (`^11.1.7`)** — Page transitions between routes (`layout/PageTransition.jsx`), staggered entrance animations, and UI micro-states (hover, tap, expand).
+- **Canvas Confetti (`^1.9.3`)** — Celebratory feedback on successful enquiry, consultation, and diagnostic submissions.
+
+### 3D & animation coverage (not limited to the hero)
+| Surface | Technology |
+| --- | --- |
+| Home — hero | Three.js interactive ecosystem (cursor + hover + scroll reactive) |
+| Home — digital transformation | GSAP ScrollTrigger scrubbed storytelling |
+| Home — technology ecosystem | Three.js orbit constellation with raycast picking |
+| Services — all 6 detail pages | Three.js rotatable model + GSAP reveal |
+| Portfolio — case studies | Three.js interactive product visualizer |
+| About | Three.js model + GSAP timeline reveals |
+
+Mobile strategy: `SceneCanvas` detects reduced-power devices / failed WebGL context and swaps to the `SceneFallback` static-gradient alternative; GSAP and Lenis honour `prefers-reduced-motion`; pixel ratio is capped at 2 to protect mobile GPUs.
 
 ---
 
@@ -214,8 +237,11 @@ In compliance with Section 7 of the assignment specification:
 ---
 
 ## 14. Known Limitations
-- The simulated upload service stores references to documents rather than uploading to an external AWS S3 bucket.
-- The email service logs email dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
+- **Database dual-mode**: the backend attempts a MongoDB connection on boot; if `MONGODB_URI` is unreachable it falls back to a resilient in-memory datastore seeded from `backend/scripts/seed.js`. This keeps the demo fully functional without a local database, but data is **not persisted across restarts** unless a real MongoDB instance is provided. The Mongoose models and controllers are the same in both modes.
+- **Simulated upload service**: stores document references rather than uploading to an external S3 bucket.
+- **Email service**: logs dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
+- **Job-board integrations** (LinkedIn / Indeed / Naukri) are not live — the careers data is curated in-repo.
+- **Blog/CMS**: the blog is backed by structured in-repo data shaped for a future Strapi/Sanity/WordPress swap, but no external CMS is connected yet.
 
 ---
 

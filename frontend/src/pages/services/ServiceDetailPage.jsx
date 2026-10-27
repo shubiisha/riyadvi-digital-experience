@@ -6,12 +6,17 @@ import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import InteractiveModel from '../../components/3d/InteractiveModel';
 import { getServiceBySlug, getProjects } from '../../lib/api';
+import useScrollReveal from '../../hooks/useScrollReveal';
 
 export const ServiceDetailPage = () => {
   const { slug } = useParams();
   const [service, setService] = useState(null);
   const [allProjects, setAllProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const featuresRef = useScrollReveal({ stagger: 0.1, y: 28 });
+  const processRef = useScrollReveal({ stagger: 0.12, y: 28 });
+  const stackRef = useScrollReveal({ stagger: 0.06, y: 24 });
 
   useEffect(() => {
     setLoading(true);
@@ -131,9 +136,9 @@ export const ServiceDetailPage = () => {
               <Sparkles className="w-5 h-5 text-gold-400" />
               Architectural Capabilities &amp; Key Features
             </h3>
-            <div className="space-y-3">
+            <div ref={featuresRef} className="space-y-3">
               {service.keyFeatures?.map((f, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-slate-800">
+                <div key={i} data-reveal-item className="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-slate-800">
                   <CheckCircle2 className="w-4 h-4 text-gold-400 shrink-0 mt-0.5" />
                   <span className="text-sm text-slate-200">{f}</span>
                 </div>
@@ -162,9 +167,9 @@ export const ServiceDetailPage = () => {
                 <Cpu className="w-5 h-5 text-gold-400" />
                 Specialized Technology Stack
               </h4>
-              <div className="flex flex-wrap gap-2">
+              <div ref={stackRef} className="flex flex-wrap gap-2">
                 {service.technologyStack?.map((t, i) => (
-                  <span key={i} className="px-3 py-1.5 rounded-lg bg-black border border-slate-800 text-xs text-gold-400 font-mono font-semibold">
+                  <span key={i} data-reveal-item className="px-3 py-1.5 rounded-lg bg-black border border-slate-800 text-xs text-gold-400 font-mono font-semibold">
                     {t}
                   </span>
                 ))}
@@ -180,9 +185,9 @@ export const ServiceDetailPage = () => {
             <h3 className="text-3xl font-extrabold text-white mt-1">Our Delivery Process</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={processRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {service.process?.map((proc) => (
-              <div key={proc.step} className="glass-card p-6 rounded-2xl border-slate-800 space-y-3 relative">
+              <div key={proc.step} data-reveal-item className="glass-card p-6 rounded-2xl border-slate-800 space-y-3 relative">
                 <span className="text-2xl font-black text-gradient-gold">0{proc.step}</span>
                 <h4 className="text-base font-bold text-white">{proc.name}</h4>
                 <p className="text-xs text-slate-400 leading-relaxed">{proc.desc}</p>
