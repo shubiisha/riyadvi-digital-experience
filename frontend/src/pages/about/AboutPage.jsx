@@ -4,8 +4,13 @@ import Container from '../../components/common/Container';
 import SectionHeading from '../../components/common/SectionHeading';
 import Button from '../../components/common/Button';
 import InteractiveModel from '../../components/3d/InteractiveModel';
+import useScrollReveal from '../../hooks/useScrollReveal';
 
 export const AboutPage = () => {
+  const valuesRef = useScrollReveal({ stagger: 0.12, y: 30 });
+  const milestonesRef = useScrollReveal({ stagger: 0.15, y: 24 });
+  const awardsRef = useScrollReveal({ stagger: 0.1, y: 30 });
+  const teamRef = useScrollReveal({ stagger: 0.14, y: 36 });
   const values = [
     {
       title: 'Architectural Excellence',
@@ -142,11 +147,11 @@ export const AboutPage = () => {
             description="The engineering and ethical standards that govern every sprint, architectural decision, and client relationship."
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={valuesRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {values.map((v, i) => {
               const Icon = v.icon;
               return (
-                <div key={i} className="glass-card p-6 rounded-2xl border-slate-800 glass-card-hover space-y-3">
+                <div key={i} data-reveal-item className="glass-card p-6 rounded-2xl border-slate-800 glass-card-hover space-y-3">
                   <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center text-gold-400">
                     <Icon className="w-5 h-5" />
                   </div>
