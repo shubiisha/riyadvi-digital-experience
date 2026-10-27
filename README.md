@@ -158,28 +158,33 @@ node backend/scripts/seed.js
 
 ## 9. AI Tools Used (Mandatory Documentation)
 
-In compliance with Section 7 of the assignment specification:
+In compliance with Section 7 of the assignment specification, each major AI tool is documented with its purpose, an example prompt, what was generated, what was manually changed, and why it was selected.
 
-### 1. Claude 3.5 Sonnet / Claude
-- **Purpose**: Architectural scaffolding of the full-stack system and initial Three.js geometric node topology.
+### 1. Claude (Anthropic) — AI coding assistant / agent
+- **Purpose**: Primary engineering partner across the whole build: scaffolding the Express API and Mongoose models, generating the React component library and design-token system, authoring the content datasets (10 case studies, 6 services, blog posts, job listings), and debugging/refactoring existing modules.
 - **Example Prompt**: *"Create an interactive 3D digital ecosystem in Three.js representing technology, connected nodes, and digital transformation for an enterprise hero section using Gold (#D4AF37) and Black palette."*
-- **What Was Generated**: Basic Three.js canvas setup, initial mesh primitives, and Express route boilerplate.
-- **What Was Manually Changed**: Replaced basic mesh loops with dual-icosahedron wireframes, an inner metallic octahedron, additive blending particle clouds, smooth mouse lerping, resize debouncers, memory cleanup, and GPU throttling (`Math.min(devicePixelRatio, 2)`).
-- **Why Selected**: Superior reasoning in mathematical 3D transformations and clean React component patterns.
+- **What Was Generated**: Base Three.js canvas setup, initial mesh primitives, Express route/controller boilerplate, Tailwind glassmorphism utility pairings.
+- **What Was Manually Changed**: Replaced basic mesh loops with dual-icosahedron wireframes, an inner metallic octahedron, additive-blending particle clouds, smoothed mouse lerping, resize debouncers, explicit memory cleanup, and GPU throttling (`Math.min(devicePixelRatio, 2)`). Later in the project the same pattern was applied to wire GSAP ScrollTrigger into a Lenis-driven scroll clock, and to add route-level code splitting — neither of which the assistant produced correctly unaided.
+- **Why Selected**: Strongest reasoning over 3D maths, React architecture and build tooling; and because the assistant's output is inspectable and patchable rather than opaque.
 
 ### 2. Antigravity / Gemini
-- **Purpose**: Dynamic data modeling for all 10 case studies (Puratap, Wanaromah, Laxmi Astro AI, etc.), 6 core services, and diagnostic scoring algorithms.
+- **Purpose**: Dynamic data modelling for all 10 case studies (Puratap, Wanaromah, Laxmi Astro AI, Tony & Guy, Studio11, Sivam Physio Care, Pearl Housing, Nugenica Biotech Lab, VisDoc, Cube Dental), the 6 core services, and the diagnostic scoring algorithm behind the Business Health Checkup.
 - **Example Prompt**: *"Structure comprehensive real-world case study data for Puratap, Wanaromah Perfumers, and Laxmi Astro AI including client, challenge, technical solution, metrics, and 3D visual parameters."*
-- **What Was Generated**: Structured data schemas and initial questionnaire steps.
-- **What Was Manually Changed**: Added deep engineering parameters (WebXR specifications, LIMS pipeline specs, WebSocket chart latencies) and wired calculations into the backend controller.
+- **What Was Generated**: Structured data schemas, initial questionnaire steps, and a first-pass readiness-scoring heuristic.
+- **What Was Manually Changed**: Added deep engineering parameters (WebXR specifications, LIMS pipeline specs, WebSocket chart latencies), replaced the placeholder scoring with a weighted heuristic in `backend/src/services/leadService.js`, and aligned every payload with the Mongoose model and validator schemas.
 - **Why Selected**: Large context window and strong domain understanding of enterprise digital transformation.
 
 ### 3. v0 by Vercel
-- **Purpose**: Design token experimentation for obsidian/gold glassmorphism card surfaces.
+- **Purpose**: Design-token exploration for the obsidian/gold glassmorphism card surfaces and the metallic typography treatment.
 - **Example Prompt**: *"Generate modern Tailwind CSS card styles featuring obsidian backgrounds (#000000, #0A0E17), metallic champagne gold borders (#D4AF37), and glassmorphism backdrop-blur."*
-- **What Was Generated**: CSS utility class pairings.
-- **What Was Manually Changed**: Adjusted color contrast to meet WCAG AAA standards and implemented custom glow animations.
-- **Why Selected**: Rapid turnaround in translating luxury visual moodboards into Tailwind utility tokens.
+- **What Was Generated**: CSS utility class pairings and gradient utilities.
+- **What Was Manually Changed**: Adjusted colour contrast to meet WCAG AAA on the dark surfaces, added the custom `text-gradient-gold` and `bg-gold-glow` tokens, and re-tuned the shimmer/rotation keyframes so they respect `prefers-reduced-motion`.
+- **Why Selected**: Fast turnaround translating a luxury visual moodboard into Tailwind utility tokens.
+
+### 4. AI-assisted debugging & verification
+- **Purpose**: Reading stack traces and API responses to isolate real defects rather than guessing.
+- **Example**: After wiring the new scroll provider, the assistant was asked to *rebuild the frontend and read the compiler output* rather than assume the integration worked; the build confirmed the GSAP/ScrollTrigger/Lenis imports resolved. Similarly, a failing `/api/health-checkup` POST was diagnosed by reading `backend/src/validators/healthCheckupValidator.js` and `frontend/src/components/forms/HealthCheckupForm.jsx`, which revealed the API expected `companyName` / `contactPerson` — the client form was already correct and the test payload was wrong, so no code change was warranted.
+- **Why Selected**: Documenting that an AI-generated or AI-modified path was *verified* rather than assumed, and that some investigations correctly concluded "no change required".
 
 ---
 
