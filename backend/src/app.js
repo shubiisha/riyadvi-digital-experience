@@ -73,6 +73,13 @@ app.use('/api/blogs', blogRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/admin', adminRoutes);
 
+// SPA fallback: serve index.html for client-side routes --------------------
+if (fs.existsSync(frontendDist)) {
+  app.get(/^(?!\/api|\/uploads).*/, (req, res) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 // 404 & Error Handling
 app.use(notFound);
 app.use(errorHandler);
