@@ -136,9 +136,9 @@ export const ServiceDetailPage = () => {
               <Sparkles className="w-5 h-5 text-gold-400" />
               Architectural Capabilities &amp; Key Features
             </h3>
-            <div className="space-y-3">
+            <div ref={featuresRef} className="space-y-3">
               {service.keyFeatures?.map((f, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-slate-800">
+                <div key={i} data-reveal-item className="flex items-start gap-3 p-3 rounded-xl bg-black/40 border border-slate-800">
                   <CheckCircle2 className="w-4 h-4 text-gold-400 shrink-0 mt-0.5" />
                   <span className="text-sm text-slate-200">{f}</span>
                 </div>
@@ -185,9 +185,9 @@ export const ServiceDetailPage = () => {
             <h3 className="text-3xl font-extrabold text-white mt-1">Our Delivery Process</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div ref={processRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {service.process?.map((proc) => (
-              <div key={proc.step} className="glass-card p-6 rounded-2xl border-slate-800 space-y-3 relative">
+              <div key={proc.step} data-reveal-item className="glass-card p-6 rounded-2xl border-slate-800 space-y-3 relative">
                 <span className="text-2xl font-black text-gradient-gold">0{proc.step}</span>
                 <h4 className="text-base font-bold text-white">{proc.name}</h4>
                 <p className="text-xs text-slate-400 leading-relaxed">{proc.desc}</p>
