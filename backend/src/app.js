@@ -40,18 +40,21 @@ const allowedOrigins = new Set(
     .filter(Boolean)
 );
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Same-origin / server-to-server requests have no Origin header.
-    if (!origin) return callback(null, true);
-    const normalized = origin.replace(/\/$/, '');
-    if (allowedOrigins.has(normalized)) return callback(null, true);
-    // Allow the origin the request was made to (self-hosted SPA on same server).
-    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+  const selfOrigin = `${req.protocol}://${req.headers.host}`;
+  const isAllowed =
+    !origin ||
+    allowedOrigins.has(origin.replace(/\/$/, '')) ||
+    origin.replace(/\/$/, '') === selfOrigin;
+
+  callback(null, {
+    // `false` omits the CORS headers so the browser blocks the cross-origin call.
+    origin: isAllowed ? origin || true : false,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
+  });
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
