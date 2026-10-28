@@ -122,6 +122,7 @@ const run = async () => {
     const application = await post(base, '/api/applications', {
       name: 'Verify Tester',
       email: 'verify@example.com',
+      phone: '+91 9000000000',
       position: 'Senior Full Stack Engineer',
       jobSlug: 'senior-full-stack-engineer',
     });
