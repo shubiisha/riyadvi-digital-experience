@@ -88,6 +88,8 @@ MONGODB_URI=mongodb://localhost:27017/riyadvi_db
 FRONTEND_URL=http://localhost:5173
 ADMIN_SECRET_KEY=riyadvi_admin_super_secret_2025
 ADMIN_EMAIL=contact@riyadvisoftwaretechnologies.com
+# Path of the JSON fallback datastore (only used when MongoDB is unreachable).
+# Local: ./backend/data/riyadvi-store.json  |  Container: /data/riyadvi-store.json
 DATA_STORE_PATH=./backend/data/riyadvi-store.json
 ```
 
