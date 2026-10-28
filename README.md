@@ -44,7 +44,7 @@ This repository contains the revamped digital experience for **Riyadvi Software 
 ### Backend
 - **Runtime**: Node.js
 - **Server Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM + Resilient In-Memory Datastore for instant zero-dependency local evaluation
+- **Database**: MongoDB with Mongoose ODM + Durable File-Backed Fallback Datastore (persisted to disk) for instant zero-dependency local evaluation
 - **Security**: Helmet, CORS, Express Rate Limit
 - **Utilities**: Custom Async Handler, ApiError class, Email & Upload service emulators
 
