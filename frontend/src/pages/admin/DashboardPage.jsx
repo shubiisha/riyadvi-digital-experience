@@ -60,7 +60,7 @@ export const DashboardPage = () => {
           <Database className="w-5 h-5 text-gold-500" />
           <div>
             <p className="font-semibold text-white">Database Engine: {system?.type || 'MongoDB Enterprise Store'}</p>
-            <p className="text-slate-400">{system?.connected ? 'Live MongoDB Connected' : 'Resilient High-Availability Datastore Active'}</p>
+            <p className="text-slate-400">{system?.connected ? 'Live MongoDB Connected' : 'Durable File-Backed Datastore Active'}</p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono">
