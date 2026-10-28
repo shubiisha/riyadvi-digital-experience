@@ -24,11 +24,12 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Security and utility middleware
-app.use(helmet({ crossOriginResourcePolicy: false }));
+// frameguard is disabled so the app can be embedded inside preview iframes.
+app.use(helmet({ crossOriginResourcePolicy: false, frameguard: false }));
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key', 'x-bypass-admin'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
