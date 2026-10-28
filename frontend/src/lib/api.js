@@ -39,7 +39,7 @@ export function clearAdminKey() {
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   try {
-    const res = await fetch(url,({
+    const res = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
