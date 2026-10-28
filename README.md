@@ -137,6 +137,8 @@ node backend/scripts/seed.js
 | `PATCH`| `/api/admin/enquiries/:id/status`| Update inquiry status |
 | `GET` | `/api/admin/applications` | List submitted candidate CVs |
 
+> **Admin route authentication** — every `/api/admin/*` endpoint is protected by `authMiddleware`. Requests must include the operator secret in the `x-admin-key` header (or `Authorization: Bearer <key>`). Missing or invalid credentials return `401` with `{ success: false, message, errors[] }`. The frontend never bundles the secret: the `/admin` route presents a key gate, validates it against `GET /api/admin/metrics`, and keeps it in `localStorage` for the session only.
+
 ---
 
 ## 8. Deployment Instructions
