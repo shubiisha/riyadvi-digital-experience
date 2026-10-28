@@ -15,7 +15,6 @@ export const EnquiriesPage = () => {
       setLoading(false);
     });
   }, []);
-
   const handleStatusChange = (id, newStatus) => {
     setEnquiries((prev) =>
       prev.map((item) => (item._id === id ? { ...item, status: newStatus } : item))
