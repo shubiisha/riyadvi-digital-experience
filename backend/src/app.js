@@ -23,6 +23,10 @@ const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
+// The app sits behind a reverse proxy in production, so trust the first proxy hop
+// for X-Forwarded-For (otherwise express-rate-limit cannot identify clients).
+app.set('trust proxy', 1);
+
 // Security and utility middleware
 // frameguard is disabled so the app can be embedded inside preview iframes.
 app.use(helmet({ crossOriginResourcePolicy: false, frameguard: false }));
