@@ -5,13 +5,43 @@ import { jobsData } from '../data/jobs';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// ---------------------------------------------------------------------------
+// Admin authentication
+// The admin secret is never bundled into the frontend build. It is entered by
+// the operator at runtime and kept in localStorage for the session only.
+// ---------------------------------------------------------------------------
+const ADMIN_KEY_STORAGE = 'riyadvi_admin_key';
+
+export function getAdminKey() {
+  try {
+    return window.localStorage.getItem(ADMIN_KEY_STORAGE) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setAdminKey(key) {
+  try {
+    window.localStorage.setItem(ADMIN_KEY_STORAGE, key);
+  } catch {
+    /* storage unavailable (private mode) - key stays in memory only */
+  }
+}
+
+export function clearAdminKey() {
+  try {
+    window.localStorage.removeItem(ADMIN_KEY_STORAGE);
+  } catch {
+    /* noop */
+  }
+}
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
   try {
-    const res = await fetch(url, {
+    const res = await fetch(url,({
       headers: {
         'Content-Type': 'application/json',
-        'x-bypass-admin': 'true',
         ...options.headers,
       },
       ...options,
