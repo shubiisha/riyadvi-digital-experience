@@ -105,7 +105,7 @@ VITE_WHATSAPP_NUMBER=919845012890
 
 The application features an intelligent dual-mode database layer:
 1. **Live MongoDB**: Automatically connects to `MONGODB_URI` if a MongoDB daemon is active.
-2. **Resilient In-Memory Datastore**: If MongoDB is not running locally, the server logs a notice and operates via an in-memory high-availability data layer, ensuring evaluators can test 100% of the API endpoints, form submissions, and admin views without needing to install or configure MongoDB!
+2. **Durable File-Backed Fallback Datastore**: If MongoDB is not running locally, the server logs a notice and operates via a disk-persisted JSON datastore (path configurable with `DATA_STORE_PATH`), ensuring evaluators can test 100% of the API endpoints, form submissions, and admin views without needing to install or configure MongoDB. Leads survive process restarts.
 
 To manually run the seed script:
 ```bash
