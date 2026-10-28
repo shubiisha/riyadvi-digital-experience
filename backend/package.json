@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node scripts/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "verify": "node scripts/verify.js",
+    "test": "node scripts/verify.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
