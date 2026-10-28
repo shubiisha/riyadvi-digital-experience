@@ -28,8 +28,25 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security and utility middleware
-// frameguard is disabled so the app can be embedded inside preview iframes.
-app.use(helmet({ crossOriginResourcePolicy: false, frameguard: false }));
+// frameguard is disabled and the CSP `frame-ancestors` directive is removed so
+// the app can be embedded inside preview iframes.
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+    frameguard: false,
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        // Remove frame-ancestors (X-Frame-Options is already disabled above).
+        frameAncestors: null,
+        // Allow remote imagery (e.g. Unsplash) and blob/data sources.
+        'img-src': ["'self'", 'data:', 'blob:', 'https://images.unsplash.com'],
+        // The SPA may call the API from a preview/embedding origin.
+        'connect-src': ["'self'", 'https:'],
+      },
+    },
+  })
+);
 // CORS: allow the configured frontend origin, the app's own origin (the built
 // SPA is served from this same server) and local dev ports. No wildcard.
 const allowedOrigins = new Set(
