@@ -30,8 +30,26 @@ app.set('trust proxy', 1);
 // Security and utility middleware
 // frameguard is disabled so the app can be embedded inside preview iframes.
 app.use(helmet({ crossOriginResourcePolicy: false, frameguard: false }));
+// CORS: allow the configured frontend origin, the app's own origin (the built
+// SPA is served from this same server) and local dev ports. No wildcard.
+const allowedOrigins = new Set(
+  [env.FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173']
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(','))
+    .map((value) => value.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+);
+
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    // Same-origin / server-to-server requests have no Origin header.
+    if (!origin) return callback(null, true);
+    const normalized = origin.replace(/\/$/, '');
+    if (allowedOrigins.has(normalized)) return callback(null, true);
+    // Allow the origin the request was made to (self-hosted SPA on same server).
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-key'],
 }));
