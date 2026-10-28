@@ -7,10 +7,12 @@ import { getAdminMetrics } from '../../lib/api';
 export const DashboardPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
 
   useEffect(() => {
     getAdminMetrics().then((res) => {
       setData(res);
+      setUnauthorized(!res);
       setLoading(false);
     });
   }, []);
@@ -19,14 +21,23 @@ export const DashboardPage = () => {
     return <LoadingSpinner label="Aggregating System Metrics..." />;
   }
 
+  if (unauthorized) {
+    return (
+      <div className="glass-card p-12 text-center rounded-2xl border-slate-800">
+        <p className="text-sm font-semibold text-red-400">Administrator key rejected or expired.</p>
+        <p className="text-xs text-slate-400 mt-2">Re-enter the admin secret to load live metrics.</p>
+      </div>
+    );
+  }
+
   const { metrics, system, recentEnquiries, recentApplications } = data || {
     metrics: {
-      totalEnquiries: 12,
-      totalConsultations: 6,
-      totalHealthCheckups: 15,
-      totalLeadMagnets: 38,
-      totalApplications: 9,
-      overallLeads: 71,
+      totalEnquiries: 0,
+      totalConsultations: 0,
+      totalHealthCheckups: 0,
+      totalLeadMagnets: 0,
+      totalApplications: 0,
+      overallLeads: 0,
     },
     system: { connected: false, type: 'Standalone Evaluation Mode' },
     recentEnquiries: [],
