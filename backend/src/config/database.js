@@ -15,7 +15,9 @@ const connectDB = async () => {
     return true;
   } catch (error) {
     console.warn(`[DB] MongoDB connection warning: ${error.message}`);
-    console.warn(`[DB] Activating resilient in-memory data store for seamless zero-dependency evaluation.`);
+    console.warn(
+      `[DB] Activating durable disk-backed data store (${env.DATA_STORE_PATH}) for seamless zero-dependency evaluation.`
+    );
     isInMemoryFallback = true;
     return false;
   }
@@ -24,7 +26,7 @@ const connectDB = async () => {
 const getDbStatus = () => ({
   connected: isConnected,
   fallbackMode: isInMemoryFallback,
-  type: isConnected ? 'MongoDB' : 'Resilient In-Memory Datastore',
+  type: isConnected ? 'MongoDB' : 'Durable File-Backed Datastore',
 });
 
 module.exports = {
