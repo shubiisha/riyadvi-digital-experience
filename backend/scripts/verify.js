@@ -15,7 +15,9 @@ const os = require('os');
 const { spawnSync } = require('child_process');
 
 const ADMIN_KEY = 'verify_admin_key_123';
-const STORE_FILE = path.join(os.tmpdir(), `riyadvi-verify-${process.pid}.json`);
+// Never override an inherited DATA_STORE_PATH (the restart probe relies on it).
+const STORE_FILE =
+  process.env.DATA_STORE_PATH || path.join(os.tmpdir(), `riyadvi-verify-${process.pid}.json`);
 
 process.env.ADMIN_SECRET_KEY = ADMIN_KEY;
 process.env.DATA_STORE_PATH = STORE_FILE;
