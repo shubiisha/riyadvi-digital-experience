@@ -88,6 +88,7 @@ MONGODB_URI=mongodb://localhost:27017/riyadvi_db
 FRONTEND_URL=http://localhost:5173
 ADMIN_SECRET_KEY=riyadvi_admin_super_secret_2025
 ADMIN_EMAIL=contact@riyadvisoftwaretechnologies.com
+DATA_STORE_PATH=./backend/data/riyadvi-store.json
 ```
 
 ### Frontend (`frontend/.env`)
