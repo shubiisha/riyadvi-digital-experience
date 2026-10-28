@@ -240,7 +240,7 @@ Mobile strategy: `SceneCanvas` detects reduced-power devices / failed WebGL cont
 ---
 
 ## 14. Known Limitations
-- **Database dual-mode**: the backend attempts a MongoDB connection on boot; if `MONGODB_URI` is unreachable it falls back to a resilient in-memory datastore seeded from `backend/scripts/seed.js`. This keeps the demo fully functional without a local database, but data is **not persisted across restarts** unless a real MongoDB instance is provided. The Mongoose models and controllers are the same in both modes.
+- **Database dual-mode**: the backend attempts a MongoDB connection on boot; if `MONGODB_URI` is unreachable it falls back to a disk-persisted JSON datastore (path set by `DATA_STORE_PATH`) seeded from `backend/scripts/seed.js`. This keeps the demo fully functional without a local database and now **survives process restarts** (in production the file lives on the mounted `/data/` volume). The Mongoose models and controllers are the same in both modes; the real MongoDB path remains unexercised in the current sandbox because no MongoDB instance is reachable here.
 - **Simulated upload service**: stores document references rather than uploading to an external S3 bucket.
 - **Email service**: logs dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
 - **Job-board integrations** (LinkedIn / Indeed / Naukri) are not live — the careers data is curated in-repo.
