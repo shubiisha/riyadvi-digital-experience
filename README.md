@@ -116,6 +116,17 @@ npm run seed
 node backend/scripts/seed.js
 ```
 
+### Automated Verification
+
+A focused regression check covers admin authentication, the public write endpoints and datastore durability:
+
+```bash
+cd backend
+npm test        # or: npm run verify
+```
+
+It asserts that `/api/admin/*` returns `401` without a valid key and `200` with one, that all five public POST endpoints answer `success:true` (and `400` with `errors[]` on invalid input), and that a lead written to the fallback datastore is still present after a simulated process restart. The check exits non-zero on the first failed assertion.
+
 ---
 
 ## 7. API Endpoints
