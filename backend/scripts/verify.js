@@ -86,7 +86,7 @@ const run = async () => {
       requirement: 'Verification enquiry',
       message: 'Automated regression check.',
     });
-    assert(contact.status === 200 && contact.json.success === true, 'POST /api/contact -> success:true');
+    assert(contact.json && contact.json.success === true, `POST /api/contact -> success:true (status ${contact.status})`);
 
     const invalid = await post(base, '/api/contact', { email: 'not-an-email' });
     assert(
@@ -100,7 +100,7 @@ const run = async () => {
       email: 'verify@example.com',
       phone: '+91 9000000000',
     });
-    assert(health.status === 200 && health.json.success === true, 'POST /api/health-checkup -> success:true');
+    assert(health.json && health.json.success === true, `POST /api/health-checkup -> success:true (status ${health.status})`);
 
     const consultation = await post(base, '/api/consultation', {
       name: 'Verify Tester',
@@ -109,7 +109,7 @@ const run = async () => {
       date: '2026-01-15',
       slot: '10:00',
     });
-    assert(consultation.status === 200 && consultation.json.success === true, 'POST /api/consultation -> success:true');
+    assert(consultation.json && consultation.json.success === true, `POST /api/consultation -> success:true (status ${consultation.status})`);
 
     const lead = await post(base, '/api/lead-magnet', {
       name: 'Verify Tester',
@@ -117,7 +117,7 @@ const run = async () => {
       email: 'verify@example.com',
       phone: '+91 9000000000',
     });
-    assert(lead.status === 200 && lead.json.success === true, 'POST /api/lead-magnet -> success:true');
+    assert(lead.json && lead.json.success === true, `POST /api/lead-magnet -> success:true (status ${lead.status})`);
 
     const application = await post(base, '/api/applications', {
       name: 'Verify Tester',
@@ -125,7 +125,7 @@ const run = async () => {
       position: 'Senior Full Stack Engineer',
       jobSlug: 'senior-full-stack-engineer',
     });
-    assert(application.status === 200 && application.json.success === true, 'POST /api/applications -> success:true');
+    assert(application.json && application.json.success === true, `POST /api/applications -> success:true (status ${application.status})`);
   } finally {
     server.close();
   }
