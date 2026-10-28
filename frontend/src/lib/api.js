@@ -191,45 +191,99 @@ export async function postJobApplication(data) {
   };
 }
 
+// ---------------------------------------------------------------------------
 // Admin
+// Every admin request carries the operator-supplied secret in the `x-admin-key`
+// header. The backend rejects requests without a valid key with HTTP 401.
+// ---------------------------------------------------------------------------
+const ADMIN_UNAUTHORIZED_EVENT = 'riyadvi:admin-unauthorized';
+
+export function onAdminUnauthorized(handler) {
+  window.addEventListener(ADMIN_UNAUTHORIZED_EVENT, handler);
+  return () => window.removeEventListener(ADMIN_UNAUTHORIZED_EVENT, handler);
+}
+
+const emitUnauthorized = () => {
+  window.dispatchEvent(new CustomEvent(ADMIN_UNAUTHORIZED_EVENT));
+};
+
+/**
+ * Validates an admin key without persisting it.
+ * @returns {Promise<{ ok: boolean, reason: 'invalid'|'error'|'network'|'ok' }>}
+ */
+export async function validateAdminKey(key) {
+  if (!key) return { ok: false, reason: 'invalid' };
+  try {
+    const res = await fetch(`${API_BASE}/admin/metrics`, {
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+    });
+    if (res.status === 401 || res.status === 403) return { ok: false, reason: 'invalid' };
+    if (!res.ok) return { ok: false, reason: 'error' };
+    return { ok: true, reason: 'ok' };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
+
+async function adminFetch(endpoint) {
+  const key = getAdminKey();
+  if (!key) {
+    emitUnauthorized();
+    return { status: 'unauthorized', data: null };
+  }
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key },
+    });
+    if (res.status === 401 || res.status === 403) {
+      emitUnauthorized();
+      return { status: 'unauthorized', data: null };
+    }
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.warn(`[API] Admin endpoint '${endpoint}' failed:`, errData.message || res.status);
+      return { status: 'error', data: null };
+    }
+    const json = await res.json();
+    return { status: 'ok', data: json.data };
+  } catch (error) {
+    console.warn(`[API] Admin endpoint '${endpoint}' unreachable:`, error.message);
+    return { status: 'offline', data: null };
+  }
+}
+
+const PREVIEW_METRICS = {
+  metrics: {
+    totalEnquiries: 14,
+    totalConsultations: 8,
+    totalHealthCheckups: 19,
+    totalLeadMagnets: 42,
+    totalApplications: 11,
+    overallLeads: 83,
+  },
+  system: { connected: false, fallbackMode: true, type: 'Standalone Preview Store' },
+  recentEnquiries: [],
+  recentApplications: [],
+};
+
 export async function getAdminMetrics() {
-  const response = await request('/admin/metrics');
-  if (response && response.data) return response.data;
-  return {
-    metrics: {
-      totalEnquiries: 14,
-      totalConsultations: 8,
-      totalHealthCheckups: 19,
-      totalLeadMagnets: 42,
-      totalApplications: 11,
-      overallLeads: 83,
-    },
-    system: { connected: false, fallbackMode: true, type: 'Standalone Preview Store' },
-    recentEnquiries: [
-      { _id: '1', name: 'Alexander Wright', email: 'a.wright@aurora-logistics.com', company: 'Aurora Global Logistics', requirement: 'Enterprise Web Portal & 3D Fleet Tracking', status: 'New', createdAt: new Date().toISOString() },
-      { _id: '2', name: 'Dr. Meera Nambiar', email: 'dr.meera@carewell.in', company: 'Carewell Health Networks', requirement: 'Telemedicine App & Multi-Clinic Management', status: 'In Progress', createdAt: new Date().toISOString() }
-    ],
-    recentApplications: [
-      { _id: '1', name: 'David Chen', email: 'david@chen.dev', position: 'Senior Full Stack Engineer', status: 'Applied', createdAt: new Date().toISOString() }
-    ]
-  };
+  const { status, data } = await adminFetch('/admin/metrics');
+  if (status === 'ok' && data) return data;
+  // Unauthorised callers never receive sample data.
+  if (status === 'unauthorized') return null;
+  return PREVIEW_METRICS;
 }
 
 export async function getAdminEnquiries() {
-  const response = await request('/admin/enquiries');
-  if (response && response.data) return response.data;
-  return [
-    { _id: '1', name: 'Alexander Wright', email: 'a.wright@aurora-logistics.com', phone: '+1 415 892 3401', company: 'Aurora Global Logistics', requirement: 'Enterprise Web Portal & 3D Fleet Tracking', message: 'We are seeking a reliable technology partner to rebuild our carrier booking portal.', status: 'New', createdAt: new Date().toISOString() },
-    { _id: '2', name: 'Dr. Meera Nambiar', email: 'dr.meera@carewell.in', phone: '+91 98450 12890', company: 'Carewell Health Networks', requirement: 'Telemedicine App & Multi-Clinic Management', message: 'Looking for a secure, HIPAA-compliant patient consultation app.', status: 'In Progress', createdAt: new Date().toISOString() },
-    { _id: '3', name: 'Sarah Jenkins', email: 's.jenkins@luxuryliving.co.uk', phone: '+44 20 7946 0912', company: 'Luxury Living Realty', requirement: 'Interactive 3D Virtual Tours', message: 'Require WebXR 3D visualization for prime central London penthouses.', status: 'Contacted', createdAt: new Date().toISOString() }
-  ];
+  const { status, data } = await adminFetch('/admin/enquiries');
+  if (status === 'ok' && data) return data;
+  if (status === 'unauthorized') return null;
+  return [];
 }
 
 export async function getAdminApplications() {
-  const response = await request('/admin/applications');
-  if (response && response.data) return response.data;
-  return [
-    { _id: '1', name: 'David Chen', email: 'david@chen.dev', phone: '+91 98765 43210', position: 'Senior Full Stack Engineer (React + Node.js)', experienceYears: '5 years', resumeUrl: 'https://linkedin.com/in/davidchen', coverLetter: 'Passionate about building scalable architectures and Three.js 3D web platforms.', status: 'Applied', createdAt: new Date().toISOString() },
-    { _id: '2', name: 'Priya Sundaram', email: 'priya.s@designstudio.io', phone: '+91 91234 56789', position: 'Senior UI/UX Product Designer', experienceYears: '4 years', resumeUrl: 'https://behance.net/priyasundaram', coverLetter: 'Experienced in luxury design systems and micro-interactions.', status: 'Reviewing', createdAt: new Date().toISOString() }
-  ];
+  const { status, data } = await adminFetch('/admin/applications');
+  if (status === 'ok' && data) return data;
+  if (status === 'unauthorized') return null;
+  return [];
 }
