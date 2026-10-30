@@ -134,7 +134,7 @@ const waitForServer = async () => {
         email: 'smoke@example.com',
         phone: '+91 90000 00000',
         company: 'Smoke Co',
-        service: 'Web Development',
+        requirement: 'Web Development',
         message: 'Production smoke test enquiry.',
       }),
     });
