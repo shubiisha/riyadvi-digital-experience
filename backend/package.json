@@ -9,7 +9,8 @@
     "dev": "nodemon src/server.js",
     "seed": "node scripts/seed.js",
     "verify": "node scripts/verify.js",
-    "test": "node scripts/verify.js"
+    "test": "node scripts/verify.js",
+    "smoke": "node scripts/smoke.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
