@@ -38,6 +38,20 @@ const startServer = async () => {
     console.error('[SERVER] Listener error:', error);
   });
 
+  // -------------------------------------------------------------------------
+  // Keep-alive tuning for a proxied deployment
+  // -------------------------------------------------------------------------
+  // Node closes an idle keep-alive socket after 5s (the default), while the
+  // platform's edge proxy keeps its upstream sockets for longer. When the two
+  // time out at the same moment the proxy reuses a socket the origin has just
+  // closed, and the request fails at the edge as a 502 — intermittently, under
+  // light traffic, on a container that is completely healthy. Keeping sockets
+  // alive well past the proxy window removes that race.
+  server.keepAliveTimeout = 65_000;
+  // headersTimeout must exceed keepAliveTimeout, or Node drops slow headers.
+  server.headersTimeout = 66_000;
+  server.requestTimeout = 30_000;
+
   // Handle graceful shutdown
   process.on('SIGTERM', () => {
     console.log('SIGTERM received. Shutting down gracefully.');
