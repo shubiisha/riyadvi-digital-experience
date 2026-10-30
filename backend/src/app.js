@@ -93,6 +93,13 @@ if (fs.existsSync(frontendDist)) {
 // General rate limiter
 app.use('/api', generalLimiter);
 
+// Lightweight liveness probe. Registered before the rate limiter so platform
+// health checks are never throttled and can never be the reason a container is
+// marked unhealthy.
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // Health & Status check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
