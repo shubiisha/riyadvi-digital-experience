@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const env = require('./config/env');
 const { generalLimiter } = require('./middleware/rateLimiter');
+const { metricsMiddleware } = require('./middleware/metrics');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 const { getDbStatus } = require('./config/database');
@@ -20,8 +21,13 @@ const projectRoutes = require('./routes/projectRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const stackRoutes = require('./routes/stackRoutes');
 
 const app = express();
+
+// Record real request telemetry for /api/stack (registered first so every
+// request is measured, including 404s and rate-limited calls).
+app.use(metricsMiddleware);
 
 // The app sits behind a reverse proxy in production, so trust the first proxy hop
 // for X-Forwarded-For (otherwise express-rate-limit cannot identify clients).
@@ -122,6 +128,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/stack', stackRoutes);
 
 // SPA fallback: serve index.html for client-side routes --------------------
 if (fs.existsSync(frontendDist)) {

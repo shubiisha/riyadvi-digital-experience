@@ -9,9 +9,21 @@ const {
   getAllHealthCheckups,
   getAllLeadMagnets,
 } = require('../controllers/adminController');
+const {
+  listContent,
+  createContent,
+  updateContent,
+  deleteContent,
+} = require('../controllers/contentController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.use(authMiddleware);
+
+// Content management (CMS) — authenticated CRUD over the live site content.
+router.get('/content/:collection', listContent);
+router.post('/content/:collection', createContent);
+router.patch('/content/:collection/:id', updateContent);
+router.delete('/content/:collection/:id', deleteContent);
 
 router.get('/metrics', getDashboardMetrics);
 router.get('/enquiries', getAllEnquiries);
