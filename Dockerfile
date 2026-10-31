@@ -4,6 +4,11 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
+# Patch the base image's OS packages (openssl & friends) to the versions
+# published for this Alpine release. The node image lags behind the security
+# repository, so an explicit upgrade keeps the build toolchain current.
+RUN apk upgrade --no-cache
+
 # Install deps first for layer caching (only manifests are copied)
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
