@@ -72,6 +72,13 @@ npm run install:all
 npm run dev
 ```
 
+Run the full-stack verification suite from the repository root (it bootstraps the API, exercises auth, validation, the live stack endpoint, an authenticated content CRUD round trip and datastore durability):
+
+```bash
+npm test          # same as: npm test --prefix backend
+npm run build     # production build of the frontend
+```
+
 Visit the application in your browser:
 - **Frontend App**: [http://localhost:5173](http://localhost:5173)
 - **Backend API**: [http://localhost:5000/api](http://localhost:5000/api)
