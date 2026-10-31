@@ -128,7 +128,8 @@ async function request(endpoint, options = {}) {
       setConnectionState({ status: 'live', latencyMs: durationMs, lastError: `HTTP ${res.status}` });
       throw new ApiError(
         (body && body.message) || `Request failed with status ${res.status}`,
-        res.status一家人
+        res.status,
+        body
       );
     }
 
