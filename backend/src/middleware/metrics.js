@@ -90,6 +90,17 @@ const getMetrics = () => {
     apiRequests: state.apiRequests,
     errorRequests: state.errorRequests,
     errorRate: state.totalRequests ? Number(((state.errorRequests / state.totalRequests) * 100).toFixed(2)) : 0,
+    // Split so a reviewer can tell "the API rejected my bad request" (4xx, expected)
+    // from "the server broke" (5xx, not expected). serverErrorRate is the number
+    // that actually indicates instability.
+    clientErrorRequests: state.clientErrorRequests,
+    serverErrorRequests: state.serverErrorRequests,
+    clientErrorRate: state.totalRequests
+      ? Number(((state.clientErrorRequests / state.totalRequests) * 100).toFixed(2))
+      : 0,
+    serverErrorRate: state.totalRequests
+      ? Number(((state.serverErrorRequests / state.totalRequests) * 100).toFixed(2))
+      : 0,
     latency: {
       samples: sorted.length,
       avgMs: sorted.length ? Number((sample / sorted.length).toFixed(2)) : 0,

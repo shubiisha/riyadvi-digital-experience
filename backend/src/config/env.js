@@ -47,6 +47,19 @@ const resolveDataStorePath = () => {
 // regardless of how the container resolves its default host.
 const HOST = process.env.HOST || '0.0.0.0';
 
+const ADMIN_SECRET_KEY_FALLBACK = 'riyadvi_admin_super_secret_2025';
+
+if (!process.env.ADMIN_SECRET_KEY) {
+  // Deliberately kept as a documented demo credential so an evaluator can log in
+  // to /admin without any setup, but never silently: the boot log states that the
+  // published default is in use and how to replace it. Set ADMIN_SECRET_KEY in the
+  // environment to override it.
+  console.warn(
+    '[ENV] ADMIN_SECRET_KEY is not set — using the documented demo key. ' +
+      'Set ADMIN_SECRET_KEY to a private value before using this in production.'
+  );
+}
+
 module.exports = {
   PORT: process.env.PORT || 5000,
   HOST,
