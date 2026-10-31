@@ -1,16 +1,90 @@
 import React, { useCallback } from 'react';
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import SceneCanvas from './SceneCanvas';
+
+/**
+ * Hero 3D scene — hand-written three.js renderer with a real post-processing
+ * chain (EffectComposer → RenderPass → UnrealBloom → OutputPass).
+ *
+ * Everything in here is a live WebGL draw call: a shader-driven energy shell,
+ * instanced particle constellation, orbital rings, additive glow sprites and a
+ * bloom pass that makes emissive geometry actually bleed light. Pointer input
+ * drives rotation with inertia; dragging orbits the core; scrolling pulls the
+ * camera. If WebGL or the composer is unavailable the caller falls back to a
+ * designed static panel rather than an empty box.
+ */
+
+const ENERGY_SHELL_VERT = /* glsl */ `
+  uniform float uTime;
+  uniform float uIntensity;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying float vRipple;
+
+  // Cheap 3D value noise — enough for an organic surface shimmer.
+  float hash(vec3 p) {
+    return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+  }
+  float noise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float n000 = hash(i);
+    float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+    float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+    float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+    float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+    float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+    float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+    float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+    return mix(
+      mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+      mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+      f.z
+    );
+  }
+
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -mvPosition.xyz;
+    vRipple = noise(position * 1.6 + vec3(0.0, uTime * 0.35, uTime * 0.2));
+    vec3 displaced = position + normal * (vRipple - 0.5) * 0.55 * uIntensity;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+  }
+`;
+
+const ENERGY_SHELL_FRAG = /* glsl */ `
+  uniform float uTime;
+  uniform vec3 uColorA;
+  uniform vec3 uColorB;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+  varying float vRipple;
+
+  void main() {
+    vec3 viewDir = normalize(vViewPosition);
+    float fresnel = pow(1.0 - abs(dot(viewDir, vNormal)), 2.6);
+    vec3 color = mix(uColorA, uColorB, vRipple);
+    float pulse = 0.78 + 0.22 * sin(uTime * 1.6 + vRipple * 6.283);
+    float alpha = clamp(fresnel * 0.9 + vRipple * 0.16, 0.0, 1.0) * pulse;
+    gl_FragColor = vec4(color * (0.7 + fresnel * 1.9), alpha);
+  }
+`;
 
 export const DigitalEcosystem = () => {
   const initThreeScene = useCallback((container) => {
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || 600;
 
-    // 1. Scene, Camera, Renderer
+    // 1. Scene, camera, renderer -------------------------------------------
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    camera.position.z = 24;
+    camera.position.set(0, 0, 24);
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
@@ -19,182 +93,348 @@ export const DigitalEcosystem = () => {
     });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearAlpha(0);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     container.appendChild(renderer.domElement);
 
-    // 2. Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    scene.add(ambientLight);
+    // 2. Lighting -----------------------------------------------------------
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 
-    const pointLightGold = new THREE.PointLight(0xd4af37, 3.5, 60);
-    pointLightGold.position.set(12, 12, 12);
-    scene.add(pointLightGold);
+    const keyLight = new THREE.PointLight(0xd4af37, 46, 70, 2);
+    keyLight.position.set(12, 12, 12);
+    scene.add(keyLight);
 
-    const pointLightWarm = new THREE.PointLight(0xf5e6a7, 2, 40);
-    pointLightWarm.position.set(-10, -10, 10);
-    scene.add(pointLightWarm);
+    const fillLight = new THREE.PointLight(0x6ee7ff, 22, 60, 2);
+    fillLight.position.set(-12, -8, 10);
+    scene.add(fillLight);
 
-    // 3. Central Core Group: Geometric Connected Core
+    const rimLight = new THREE.PointLight(0xfff3c4, 18, 50, 2);
+    rimLight.position.set(0, 10, -14);
+    scene.add(rimLight);
+
+    // 3. Core group ---------------------------------------------------------
     const coreGroup = new THREE.Group();
     scene.add(coreGroup);
 
-    // Outer wireframe icosahedron (Gold)
-    const outerGeo = new THREE.IcosahedronGeometry(7.2, 1);
-    const outerMat = new THREE.MeshStandardMaterial({
-      color: 0xd4af37,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.65,
-      metalness: 0.9,
-      roughness: 0.1,
-    });
-    const outerMesh = new THREE.Mesh(outerGeo, outerMat);
-    coreGroup.add(outerMesh);
+    const disposables = [];
+    const track = (...items) => {
+      items.forEach((item) => disposables.push(item));
+      return items[0];
+    };
 
-    // Inner glowing solid metallic octahedron
-    const innerGeo = new THREE.OctahedronGeometry(4.2, 0);
-    const innerMat = new THREE.MeshStandardMaterial({
-      color: 0xb89228,
-      metalness: 0.85,
-      roughness: 0.2,
-      wireframe: false,
-    });
-    const innerMesh = new THREE.Mesh(innerGeo, innerMat);
-    coreGroup.add(innerMesh);
+    // Dark polished core body
+    const coreGeo = track(new THREE.IcosahedronGeometry(4.6, 4));
+    const coreMat = track(
+      new THREE.MeshStandardMaterial({
+        color: 0x120f0a,
+        metalness: 0.95,
+        roughness: 0.18,
+        flatShading: false,
+      })
+    );
+    const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+    coreGroup.add(coreMesh);
 
-    // Inner wireframe sphere for cyber core
-    const sphereGeo = new THREE.SphereGeometry(2.5, 16, 16);
-    const sphereMat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35,
-    });
-    const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
-    coreGroup.add(sphereMesh);
+    // Shader energy shell around the core
+    const shellGeo = track(new THREE.IcosahedronGeometry(5.15, 5));
+    const shellMat = track(
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uIntensity: { value: 1.0 },
+          uColorA: { value: new THREE.Color(0xd4af37) },
+          uColorB: { value: new THREE.Color(0x8be9ff) },
+        },
+        vertexShader: ENERGY_SHELL_VERT,
+        fragmentShader: ENERGY_SHELL_FRAG,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+    coreGroup.add(shellMesh);
 
-    // 4. Particle Constellation Network
-    const particleCount = 180;
+    // Gold wireframe cage
+    const cageGeo = track(new THREE.IcosahedronGeometry(7.4, 1));
+    const cageMat = track(
+      new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.42,
+        metalness: 0.9,
+        roughness: 0.1,
+      })
+    );
+    const cageMesh = new THREE.Mesh(cageGeo, cageMat);
+    coreGroup.add(cageMesh);
+
+    // Silhouette that only shows up through bloom
+    const haloGeo = track(new THREE.SphereGeometry(6.4, 32, 32));
+    const haloMat = track(
+      new THREE.MeshBasicMaterial({
+        color: 0xf5e6a7,
+        transparent: true,
+        opacity: 0.045,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+    coreGroup.add(haloMesh);
+
+    // 4. Particle constellation --------------------------------------------
+    const particleCount = 420;
     const positions = new Float32Array(particleCount * 3);
-    const particleVelocities = [];
+    const radii = new Float32Array(particleCount);
+    const phases = new Float32Array(particleCount);
 
-    for (let i = 0; i < particleCount; i++) {
-      const radius = 9 + Math.random() * 8;
+    for (let i = 0; i < particleCount; i += 1) {
+      const radius = 9 + Math.random() * 11;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
 
       positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
-
-      particleVelocities.push({
-        x: (Math.random() - 0.5) * 0.015,
-        y: (Math.random() - 0.5) * 0.015,
-        z: (Math.random() - 0.5) * 0.015,
-      });
+      radii[i] = radius;
+      phases[i] = Math.random() * Math.PI * 2;
     }
 
-    const particlesGeo = new THREE.BufferGeometry();
+    const particlesGeo = track(new THREE.BufferGeometry());
     particlesGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeo.setAttribute('aRadius', new THREE.BufferAttribute(radii, 1));
+    particlesGeo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
 
-    const particlesMat = new THREE.PointsMaterial({
-      color: 0xf5e6a7,
-      size: 0.22,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-    });
+    const particlesMat = track(
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uColor: { value: new THREE.Color(0xf5e6a7) },
+        },
+        vertexShader: /* glsl */ `
+          attribute float aRadius;
+          attribute float aPhase;
+          uniform float uTime;
+          uniform float uPixelRatio;
+          varying float vGlow;
+          void main() {
+            vec3 p = position;
+            float breathe = 1.0 + sin(uTime * 0.6 + aPhase) * 0.05;
+            p *= breathe;
+            p.y += sin(uTime * 0.5 + aPhase) * 0.45;
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            gl_Position = projectionMatrix * mv;
+            gl_PointSize = (2.6 + sin(uTime * 2.0 + aPhase) * 1.4) * uPixelRatio * (26.0 / -mv.z);
+            vGlow = 0.45 + 0.55 * abs(sin(uTime * 1.2 + aPhase));
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          varying float vGlow;
+          void main() {
+            vec2 uv = gl_PointCoord - 0.5;
+            float d = length(uv);
+            float alpha = smoothstep(0.5, 0.0, d) * vGlow;
+            gl_FragColor = vec4(uColor * (1.1 + vGlow), alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+
     const particleSystem = new THREE.Points(particlesGeo, particlesMat);
     coreGroup.add(particleSystem);
 
-    // 5. Orbital Golden Rings
-    const ringGeo = new THREE.TorusGeometry(12, 0.05, 16, 100);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xd4af37,
-      transparent: true,
-      opacity: 0.4,
+    // 5. Orbital rings ------------------------------------------------------
+    const rings = [];
+    const ringSpecs = [
+      { radius: 11.5, tilt: [Math.PI / 3, 0, 0], speed: 0.35, opacity: 0.55 },
+      { radius: 13.4, tilt: [0, Math.PI / 4, 0.2], speed: -0.22, opacity: 0.35 },
+      { radius: 15.2, tilt: [Math.PI / 2.6, 0.4, 0], speed: 0.16, opacity: 0.22 },
+    ];
+
+    ringSpecs.forEach((spec) => {
+      const ringGeo = track(new THREE.TorusGeometry(spec.radius, 0.045, 12, 180));
+      const ringMat = track(
+        new THREE.MeshBasicMaterial({
+          color: 0xd4af37,
+          transparent: true,
+          opacity: spec.opacity,
+          blending: THREE.AdditiveBlending,
+        })
+      );
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.set(spec.tilt[0], spec.tilt[1], spec.tilt[2]);
+      ring.userData.speed = spec.speed;
+      rings.push(ring);
+      coreGroup.add(ring);
     });
-    const ring1 = new THREE.Mesh(ringGeo, ringMat);
-    ring1.rotation.x = Math.PI / 3;
-    coreGroup.add(ring1);
 
-    const ring2 = new THREE.Mesh(ringGeo, ringMat);
-    ring2.rotation.y = Math.PI / 4;
-    ring2.scale.set(1.15, 1.15, 1.15);
-    coreGroup.add(ring2);
+    // Orbiting nodes that ride the rings
+    const nodes = ringSpecs.slice(0, 2).map((spec, index) => {
+      const nodeGeo = track(new THREE.SphereGeometry(0.16, 16, 16));
+      const nodeMat = track(
+        new THREE.MeshBasicMaterial({ color: index === 0 ? 0xfff3c4 : 0x8be9ff })
+      );
+      const node = new THREE.Mesh(nodeGeo, nodeMat);
+      node.position.x = spec.radius;
+      const pivot = new THREE.Group();
+      pivot.rotation.set(spec.tilt[0], spec.tilt[1], spec.tilt[2]);
+      pivot.add(node);
+      pivot.userData.speed = spec.speed * 2.2;
+      coreGroup.add(pivot);
+      return pivot;
+    });
 
-    // 6. Interactive Mouse Coordinates with Lerp
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetX = 0;
-    let targetY = 0;
+    // 6. Post-processing chain ---------------------------------------------
+    let composer = null;
+    try {
+      composer = new EffectComposer(renderer);
+      composer.setSize(width, height);
+      composer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      composer.addPass(new RenderPass(scene, camera));
 
-    const onMouseMove = (event) => {
+      const bloom = new UnrealBloomPass(
+        new THREE.Vector2(width, height),
+        1.15, // strength
+        0.72, // radius
+        0.18 // threshold
+      );
+      composer.addPass(bloom);
+      composer.addPass(new OutputPass());
+    } catch (error) {
+      console.warn('[DigitalEcosystem] Post-processing unavailable, rendering direct:', error);
+      composer = null;
+    }
+
+    // 7. Interaction --------------------------------------------------------
+    const pointer = { x: 0, y: 0 };
+    const smoothed = { x: 0, y: 0 };
+    const drag = { active: false, lastX: 0, lastY: 0, velocity: 0 };
+    let scrollFactor = 0;
+
+    const onPointerMove = (event) => {
       const rect = container.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      targetX = (x / rect.width - 0.5) * 1.8;
-      targetY = (y / rect.height - 0.5) * 1.8;
+      pointer.x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+      pointer.y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
+      if (drag.active) {
+        drag.velocity += (event.clientX - drag.lastX) * 0.0032;
+        drag.lastX = event.clientX;
+        drag.lastY = event.clientY;
+      }
     };
 
-    window.addEventListener('mousemove', onMouseMove);
+    const onPointerDown = (event) => {
+      drag.active = true;
+      drag.lastX = event.clientX;
+      drag.lastY = event.clientY;
+    };
 
-    // Resize Handler
+    const onPointerUp = () => {
+      drag.active = false;
+    };
+
+    const onScroll = () => {
+      scrollFactor = Math.min(1, window.scrollY / 900);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerdown', onPointerDown, { passive: true });
+    window.addEventListener('pointerup', onPointerUp, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     const onResize = () => {
-      if (!container) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
+      if (!w || !h) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      if (composer) composer.setSize(w, h);
     };
     window.addEventListener('resize', onResize);
 
-    // 7. Animation Loop
-    let animationFrameId;
-    let clock = new THREE.Clock();
+    // 8. Animation loop -----------------------------------------------------
+    const clock = new THREE.Clock();
+    let animationFrameId = 0;
+    let visible = true;
+
+    // Pause the loop when scrolled out of view — keeps the page responsive.
+    const observer =
+      typeof IntersectionObserver !== 'undefined'
+        ? new IntersectionObserver(
+            ([entry]) => {
+              visible = entry.isIntersecting;
+            },
+            { threshold: 0.01 }
+          )
+        : null;
+    observer?.observe(container);
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      if (!visible) return;
 
-      // Smooth mouse follow
-      mouseX += (targetX - mouseX) * 0.05;
-      mouseY += (targetY - mouseY) * 0.05;
+      const time = clock.getElapsedTime();
+      shellMat.uniforms.uTime.value = time;
+      particlesMat.uniforms.uTime.value = time;
 
-      coreGroup.rotation.y = elapsedTime * 0.15 + mouseX;
-      coreGroup.rotation.x = Math.sin(elapsedTime * 0.1) * 0.2 + mouseY;
+      smoothed.x += (pointer.x - smoothed.x) * 0.045;
+      smoothed.y += (pointer.y - smoothed.y) * 0.045;
 
-      outerMesh.rotation.y -= 0.005;
-      innerMesh.rotation.x += 0.008;
-      innerMesh.rotation.z += 0.005;
+      drag.velocity *= 0.94;
 
-      ring1.rotation.z += 0.004;
-      ring2.rotation.z -= 0.003;
+      coreGroup.rotation.y = time * 0.12 + smoothed.x * 0.55 + drag.velocity;
+      coreGroup.rotation.x = Math.sin(time * 0.1) * 0.16 + smoothed.y * 0.35;
 
-      renderer.render(scene, camera);
+      coreMesh.rotation.y += 0.0035;
+      cageMesh.rotation.y -= 0.0022;
+      cageMesh.rotation.z += 0.0012;
+      haloMesh.rotation.y += 0.0009;
+
+      rings.forEach((ring) => {
+        ring.rotation.z += ring.userData.speed * 0.004;
+      });
+      nodes.forEach((pivot) => {
+        pivot.rotation.z += pivot.userData.speed * 0.004;
+      });
+
+      // Camera dollies back slightly and tracks the pointer.
+      camera.position.z = 24 - scrollFactor * 3.2;
+      camera.position.x = smoothed.x * 1.6;
+      camera.position.y = -smoothed.y * 1.1;
+      camera.lookAt(0, 0, 0);
+
+      keyLight.position.x = Math.cos(time * 0.4) * 14;
+      keyLight.position.z = Math.sin(time * 0.4) * 14;
+
+      if (composer) composer.render();
+      else renderer.render(scene, camera);
     };
 
     animate();
 
-    // Cleanup Function
+    // 9. Cleanup ------------------------------------------------------------
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('mousemove', onMouseMove);
+      observer?.disconnect();
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onResize);
+      disposables.forEach((item) => item?.dispose?.());
+      composer?.dispose?.();
       if (container && renderer.domElement && container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      outerGeo.dispose();
-      outerMat.dispose();
-      innerGeo.dispose();
-      innerMat.dispose();
-      sphereGeo.dispose();
-      sphereMat.dispose();
-      particlesGeo.dispose();
-      particlesMat.dispose();
-      ringGeo.dispose();
-      ringMat.dispose();
     };
   }, []);
 
