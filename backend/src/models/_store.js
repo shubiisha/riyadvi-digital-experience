@@ -136,6 +136,18 @@ const createModelWrapper = (collectionName, schemaDef) => {
       return null;
     },
 
+    async removeById(id) {
+      if (isLive()) {
+        return MongoModel.findByIdAndDelete(id);
+      }
+      const list = memoryDB[collectionName] || [];
+      const index = list.findIndex((item) => item._id === id || item.id === id);
+      if (index === -1) return null;
+      const [removed] = list.splice(index, 1);
+      persist();
+      return removed;
+    },
+
     async countDocuments(filter = {}) {
       if (isLive()) {
         return MongoModel.countDocuments(filter);
