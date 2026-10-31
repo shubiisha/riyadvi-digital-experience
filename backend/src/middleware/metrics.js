@@ -12,6 +12,14 @@ const state = {
   totalRequests: 0,
   apiRequests: 0,
   errorRequests: 0,
+  // 4xx and 5xx are tracked separately on purpose. A 401/400/409 is the API
+  // *correctly* rejecting a bad request (the verification suite fires plenty of
+  // them deliberately); a 5xx is the server actually failing. Reporting only a
+  // combined "error rate" makes a healthy service with disciplined input
+  // validation look unstable, which is the opposite of what this endpoint exists
+  // to prove.
+  clientErrorRequests: 0,
+  serverErrorRequests: 0,
   byRoute: new Map(),
   latencies: [],
 };
@@ -26,7 +34,13 @@ const metricsMiddleware = (req, res, next) => {
   const done = () => {
     const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
 
-    if (res.statusCode >= 400) state.errorRequests += 1;
+    if (res.statusCode >= 500) {
+      state.errorRequests += 1;
+      state.serverErrorRequests += 1;
+    } else if (res.statusCode >= 400) {
+      state.errorRequests += 1;
+      state.clientErrorRequests += 1;
+    }
 
     // Collapse /api/services/web-development -> /api/services for a useful
     // route histogram without unbounded key growth.
