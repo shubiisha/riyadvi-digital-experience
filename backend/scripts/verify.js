@@ -172,8 +172,8 @@ const run = async () => {
     }).then(async (res) => ({ status: res.status, json: await res.json().catch(() => ({})) }));
     assert(duplicate.status === 409, `Duplicate slug rejected with 409 (got ${duplicate.status})`);
 
-    const noKey = await get(base, '/api/admin/content/services');
-    assert(noKey.status === 401, `Content listing without an admin key -> 401 (got ${noKey.status})`);
+    const contentNoKey = await get(base, '/api/admin/content/services');
+    assert(contentNoKey.status === 401, `Content listing without an admin key -> 401 (got ${contentNoKey.status})`);
 
     // Public API must serve the document that was just written — this is the
     // proof that content is dynamic rather than bundled into the frontend.
