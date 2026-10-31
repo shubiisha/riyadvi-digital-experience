@@ -145,8 +145,8 @@ const run = async () => {
       `Stack documents ${info.api && info.api.surface ? info.api.surface.length : 0} API endpoint(s)`
     );
     assert(
-      info.runtime && typeof info.runtime.requests === 'number' && info.runtime.requests > 0,
-      `Runtime telemetry recorded ${info.runtime && info.runtime.requests} request(s)`
+      info.runtime && typeof info.runtime.totalRequests === 'number' && info.runtime.totalRequests > 0,
+      `Runtime telemetry recorded ${info.runtime && info.runtime.totalRequests} total request(s)`
     );
 
     console.log('\n[verify] Authenticated content CRUD (CMS)');
