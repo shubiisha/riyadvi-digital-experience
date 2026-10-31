@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, Outlet, Link } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Briefcase, ArrowLeft, ShieldCheck, KeyRound, LogOut } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Briefcase, ArrowLeft, ShieldCheck, KeyRound, LogOut, FileJson } from 'lucide-react';
 import Container from '../../components/common/Container';
 import {
   getAdminKey,
@@ -99,6 +99,7 @@ export const AdminLayout = () => {
     { name: 'Dashboard Overview', path: '/admin', end: true, icon: LayoutDashboard },
     { name: 'Enquiries & RFPs', path: '/admin/enquiries', icon: MessageSquare },
     { name: 'Job Applications', path: '/admin/applications', icon: Briefcase },
+    { name: 'Content Studio', path: '/admin/content', icon: FileJson },
   ];
 
   // A 401 from any admin request drops the session back to the key gate.
@@ -156,7 +157,7 @@ export const AdminLayout = () => {
         ) : (
           <>
             {/* Tab Navigation */}
-            <div className="flex gap-2 p-1.5 rounded-2xl bg-obsidian-850 border border-slate-800 mb-8 max-w-xl">
+            <div className="flex gap-2 p-1.5 rounded-2xl bg-obsidian-850 border border-slate-800 mb-8 max-w-3xl">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
