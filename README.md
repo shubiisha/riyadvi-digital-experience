@@ -26,6 +26,8 @@ This repository contains the revamped digital experience for **Riyadvi Software 
   - Live metric KPI cards (Total inquiries, consultations, health checkups, lead magnets, applications)
   - Inquiry status pipeline (`New` → `In Progress` → `Contacted` → `Closed`)
   - Job application manager with candidate CV/resume links and hiring stages
+- **Live Stack Console (`/live-stack`)**: A public, self-describing page that polls `/api/stack` every 8s and renders the real state of the running system — datastore driver and document counts per collection, request/latency/error telemetry, and an interactive explorer for all 18 API endpoints that fires genuine requests and prints the live status, latency and raw JSON body. Nothing on this page is mocked: when the API is unreachable it says so.
+- **Content Studio (`/admin/content`)**: Authenticated CRUD over the same collections the public pages read from — pick a collection, edit a document as JSON, publish, and the change appears on the public site with no rebuild and no redeploy. Includes per-collection templates, validation feedback, `409`/`401` handling and a link through to the affected public page.
 - **Obsidian & Gold Design System**: Built with Tailwind CSS utilizing Riyadvi’s signature Gold (`#D4AF37`) and obsidian dark-mode palette (`#000000`, `#0A0E17`), glassmorphism cards, and micro-animations.
 - **Robust Mobile & Accessibility Fallbacks**: Built-in WebGL detection, `useReducedMotion()` accessibility support, and lightweight SVG geometric fallbacks (`SceneFallback.jsx`).
 
@@ -125,7 +127,13 @@ cd backend
 npm test        # or: npm run verify
 ```
 
-It asserts that `/api/admin/*` returns `401` without a valid key and `200` with one, that all five public POST endpoints answer `success:true` (and `400` with `errors[]` on invalid input), and that a lead written to the fallback datastore is still present after a simulated process restart. The check exits non-zero on the first failed assertion.
+It asserts that `/api/admin/*` returns `401` without a valid key and `200` with one, that all five public POST endpoints answer `success:true` (and `400` with `errors[]` on invalid input), that `/api/stack` reports a live datastore with document counts and request telemetry, and that an authenticated create → public read → update → delete round trip really changes what `/api/services` serves. The check exits non-zero on the first failed assertion.
+
+The same end-to-end narrative can be replayed against a **deployed** instance (it creates one document, proves the public API serves it without a rebuild, edits it, deletes it and proves it is gone):
+
+```bash
+npm run verify:live -- https://your-deployed-host
+```
 
 ---
 
@@ -149,6 +157,11 @@ It asserts that `/api/admin/*` returns `401` without a valid key and `200` with 
 | `GET` | `/api/admin/enquiries` | List all inquiries |
 | `PATCH`| `/api/admin/enquiries/:id/status`| Update inquiry status |
 | `GET` | `/api/admin/applications` | List submitted candidate CVs |
+| `GET` | `/api/stack` | **Live stack introspection**: datastore mode, per-collection document counts, runtime telemetry (requests, error rate, p50/p95 latency, memory) and the full endpoint catalogue |
+| `GET` | `/api/admin/content/:collection` | List documents in a content collection (`services` \| `projects` \| `blogs` \| `jobs`) |
+| `POST` | `/api/admin/content/:collection` | Create a document (required fields validated, duplicate slug → `409`) |
+| `PATCH` | `/api/admin/content/:collection/:id` | Update an existing document |
+| `DELETE` | `/api/admin/content/:collection/:id` | Delete a document (removed from the public API immediately) |
 
 > **Admin route authentication** — every `/api/admin/*` endpoint is protected by `authMiddleware`. Requests must include the operator secret in the `x-admin-key` header (or `Authorization: Bearer <key>`). Missing or invalid credentials return `401` with `{ success: false, message, errors[] }`. The frontend never bundles the secret: the `/admin` route presents a key gate, validates it against `GET /api/admin/metrics`, and keeps it in `localStorage` for the session only.
 
@@ -206,7 +219,7 @@ In compliance with Section 7 of the assignment specification, each major AI tool
 
 ## 10. 3D Libraries Used
 - **Three.js (`^0.164.1`)**: Powers every real-time WebGL 3D canvas experience. Raw Three.js (not R3F) is used so the render loop, resource disposal and raycasting are explicit and auditable.
-  - **Hero Scene (`components/3d/DigitalEcosystem.jsx`)** — Home: metallic wireframe icosahedrons, an inner octahedron core, additive-blended gold particle field, orbital rings, and mouse parallax / hover response.
+  - **Hero Scene (`components/3d/DigitalEcosystem.jsx`)** — Home: an `EffectComposer` pipeline (`RenderPass` → `UnrealBloomPass` → `OutputPass`) with ACES filmic tone mapping; metallic wireframe icosahedrons around an inner core wrapped in a **custom GLSL energy shell** (value-noise vertex displacement + fresnel/pulse fragment shader, additive blending); a 420-point shader particle constellation with per-particle phase; three additive orbital rings with orbiting node pivots; pointer move/down/up with drag inertia, scroll-driven camera dolly, `IntersectionObserver` frame-loop pausing when off-screen, and full disposables cleanup on unmount.
   - **Technology Constellation (`components/3d/TechnologyOrbit.jsx`)** — Home "Technology Ecosystem": a gold dodecahedron core with three orbiting rings whose nodes are raycast-picked on click to focus a technology.
   - **Case Study Visualizer (`components/3d/InteractiveModel.jsx`)** — Portfolio case studies: rotatable, wireframe-toggleable 3D product geometries (Wanaromah perfume flacon, Laxmi celestial sphere, geometric gemstone).
   - **Service Hero 3D (`ServiceDetailPage.jsx`)** — Service pages reuse the same visualizer with a per-service `modelType`, so all six service pages render a distinct interactive object.
@@ -232,6 +245,7 @@ Five of the assignment's mandated animation technologies are meaningfully implem
 | Services — all 6 detail pages | Three.js rotatable model + GSAP reveal |
 | Portfolio — case studies | Three.js interactive product visualizer |
 | About | Three.js model + GSAP timeline reveals |
+| Home — hero | Bloom post-processing (EffectComposer) + custom GLSL shader shell + shader particles |
 
 Mobile strategy: `SceneCanvas` detects reduced-power devices / failed WebGL context and swaps to the `SceneFallback` static-gradient alternative; GSAP and Lenis honour `prefers-reduced-motion`; pixel ratio is capped at 2 to protect mobile GPUs.
 
@@ -257,7 +271,7 @@ Mobile strategy: `SceneCanvas` detects reduced-power devices / failed WebGL cont
 - **Simulated upload service**: stores document references rather than uploading to an external S3 bucket.
 - **Email service**: logs dispatches to the console rather than requiring production SendGrid / AWS SES SMTP credentials.
 - **Job-board integrations** (LinkedIn / Indeed / Naukri) are not live — the careers data is curated in-repo.
-- **Blog/CMS**: the blog is backed by structured in-repo data shaped for a future Strapi/Sanity/WordPress swap, but no external CMS is connected yet.
+- **Content management**: Services, projects, blog posts and jobs are fully editable at runtime through the authenticated Content Studio (`/admin/content`) and the `/api/admin/content/*` API — no rebuild required. An external headless CMS (Strapi/Sanity) is not connected; the in-repo Mongoose models are the system of record.
 
 ---
 
