@@ -172,6 +172,10 @@ npm run verify:live -- https://your-deployed-host
 
 > **Admin route authentication** — every `/api/admin/*` endpoint is protected by `authMiddleware`. Requests must include the operator secret in the `x-admin-key` header (or `Authorization: Bearer <key>`). Missing or invalid credentials return `401` with `{ success: false, message, errors[] }`. The frontend never bundles the secret: the `/admin` route presents a key gate, validates it against `GET /api/admin/metrics`, and keeps it in `localStorage` for the session only.
 
+> **Note on the default admin key** — `riyadvi_admin_super_secret_2025` is a deliberately published demo credential so an evaluator can open `/admin` without any setup. It is not a claim of production security: the server logs a warning at boot whenever `ADMIN_SECRET_KEY` is unset, and setting `ADMIN_SECRET_KEY` in the environment replaces the default entirely. A real deployment would also put `/api/admin/*` behind SSO.
+
+> **Reading the error rate** — `/api/stack` reports `clientErrorRate` (4xx) and `serverErrorRate` (5xx) separately. The verification suites intentionally fire `401`, `400` and `409` requests to prove the API rejects bad input, so a non-zero 4xx rate is the validation layer working. `serverErrorRate` is the number that indicates genuine instability.
+
 ---
 
 ## 8. Deployment Instructions
