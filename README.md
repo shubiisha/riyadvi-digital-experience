@@ -95,7 +95,7 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb://localhost:27017/riyadvi_db
 FRONTEND_URL=http://localhost:5173
-ADMIN_SECRET_KEY=riyadvi_admin_super_secret_2025
+ADMIN_SECRET_KEY=riyadvi_admin_super_secret_2025   # demo default; override in production
 ADMIN_EMAIL=contact@riyadvisoftwaretechnologies.com
 # Path of the JSON fallback datastore (only used when MongoDB is unreachable).
 # Local: ./backend/data/riyadvi-store.json  |  Container: /data/riyadvi-store.json
@@ -164,7 +164,7 @@ npm run verify:live -- https://your-deployed-host
 | `GET` | `/api/admin/enquiries` | List all inquiries |
 | `PATCH`| `/api/admin/enquiries/:id/status`| Update inquiry status |
 | `GET` | `/api/admin/applications` | List submitted candidate CVs |
-| `GET` | `/api/stack` | **Live stack introspection**: datastore mode, per-collection document counts, runtime telemetry (requests, error rate, p50/p95 latency, memory) and the full endpoint catalogue |
+| `GET` | `/api/stack` | **Live stack introspection**: datastore mode, per-collection document counts, runtime telemetry (requests, 4xx vs 5xx error rates, p50/p95 latency, memory) and the full endpoint catalogue |
 | `GET` | `/api/admin/content/:collection` | List documents in a content collection (`services` \| `projects` \| `blogs` \| `jobs`) |
 | `POST` | `/api/admin/content/:collection` | Create a document (required fields validated, duplicate slug → `409`) |
 | `PATCH` | `/api/admin/content/:collection/:id` | Update an existing document |
