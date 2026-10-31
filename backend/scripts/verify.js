@@ -127,6 +127,80 @@ const run = async () => {
       jobSlug: 'senior-full-stack-engineer',
     });
     assert(application.json && application.json.success === true, `POST /api/applications -> success:true (status ${application.status})`);
+
+    console.log('\n[verify] Live stack introspection (/api/stack)');
+    const stack = await get(base, '/api/stack');
+    assert(stack.status === 200, `GET /api/stack -> 200 (got ${stack.status})`);
+    const info = (stack.json && stack.json.data) || {};
+    assert(
+      info.database && typeof info.database.totalDocuments === 'number',
+      `Stack reports a real datastore with ${info.database && info.database.totalDocuments} document(s)`
+    );
+    assert(
+      Array.isArray(info.database && info.database.collections) && info.database.collections.length >= 9,
+      `Stack exposes ${info.database && info.database.collections ? info.database.collections.length : 0} collection count(s)`
+    );
+    assert(
+      Array.isArray(info.api && info.api.surface) && info.api.surface.length >= 15,
+      `Stack documents ${info.api && info.api.surface ? info.api.surface.length : 0} API endpoint(s)`
+    );
+    assert(
+      info.runtime && typeof info.runtime.requests === 'number' && info.runtime.requests > 0,
+      `Runtime telemetry recorded ${info.runtime && info.runtime.requests} request(s)`
+    );
+
+    console.log('\n[verify] Authenticated content CRUD (CMS)');
+    const CRUD_SLUG = `verify-service-${process.pid}`;
+    const created = await fetch(`${base}/api/admin/content/services`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+      body: JSON.stringify({
+        slug: CRUD_SLUG,
+        title: 'Verify Service',
+        summary: 'Created by the automated verification run.',
+      }),
+    }).then(async (res) => ({ status: res.status, json: await res.json().catch(() => ({})) }));
+
+    assert(created.status === 201, `POST /api/admin/content/services -> 201 (got ${created.status})`);
+    const createdId = created.json && created.json.data && created.json.data._id;
+    assert(Boolean(createdId), `Created document has an id (${createdId})`);
+
+    const duplicate = await fetch(`${base}/api/admin/content/services`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+      body: JSON.stringify({ slug: CRUD_SLUG, title: 'Duplicate' }),
+    }).then(async (res) => ({ status: res.status, json: await res.json().catch(() => ({})) }));
+    assert(duplicate.status === 409, `Duplicate slug rejected with 409 (got ${duplicate.status})`);
+
+    const noKey = await get(base, '/api/admin/content/services');
+    assert(noKey.status === 401, `Content listing without an admin key -> 401 (got ${noKey.status})`);
+
+    // Public API must serve the document that was just written — this is the
+    // proof that content is dynamic rather than bundled into the frontend.
+    const publicAfterCreate = await get(base, '/api/services');
+    const publicSlugs = ((publicAfterCreate.json && publicAfterCreate.json.data) || []).map((item) => item.slug);
+    assert(publicSlugs.includes(CRUD_SLUG), 'Public /api/services serves the newly created document');
+
+    const patched = await fetch(`${base}/api/admin/content/services/${createdId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+      body: JSON.stringify({ title: 'Verify Service (edited)' }),
+    }).then(async (res) => ({ status: res.status, json: await res.json().catch(() => ({})) }));
+    assert(patched.status === 200, `PATCH admin content -> 200 (got ${patched.status})`);
+    assert(
+      patched.json && patched.json.data && patched.json.data.title === 'Verify Service (edited)',
+      'PATCH returned the updated document'
+    );
+
+    const removed = await fetch(`${base}/api/admin/content/services/${createdId}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-key': ADMIN_KEY },
+    }).then(async (res) => ({ status: res.status, json: await res.json().catch(() => ({})) }));
+    assert(removed.status === 200, `DELETE admin content -> 200 (got ${removed.status})`);
+
+    const publicAfterDelete = await get(base, '/api/services');
+    const remainingSlugs = ((publicAfterDelete.json && publicAfterDelete.json.data) || []).map((item) => item.slug);
+    assert(!remainingSlugs.includes(CRUD_SLUG), 'Deleted document is no longer served by the public API');
   } finally {
     server.close();
   }
