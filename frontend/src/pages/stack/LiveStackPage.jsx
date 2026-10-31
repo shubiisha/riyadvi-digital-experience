@@ -231,7 +231,9 @@ export const LiveStackPage = () => {
             icon={Zap}
             label="Requests served"
             value={runtime?.totalRequests ?? '—'}
-            sub={`${runtime?.apiRequests ?? 0} to /api · ${runtime?.errorRate ?? 0}% errors`}
+            sub={`${runtime?.apiRequests ?? 0} to /api · ${runtime?.clientErrorRate ?? 0}% 4xx · ${
+              runtime?.serverErrorRate ?? 0
+            }% 5xx`}
             tone="violet"
           />
           <StatCard
