@@ -20,6 +20,7 @@ const JobDetailPage = lazy(() => import('../pages/careers/JobDetailPage'));
 const ContactPage = lazy(() => import('../pages/contact/ContactPage'));
 const HealthCheckupPage = lazy(() => import('../pages/health-checkup/HealthCheckupPage'));
 const ProjectGuidePage = lazy(() => import('../pages/project-guide/ProjectGuidePage'));
+const LiveStackPage = lazy(() => import('../pages/stack/LiveStackPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
 
 // Admin
@@ -27,6 +28,7 @@ const AdminLayout = lazy(() => import('../pages/admin/AdminLayout'));
 const DashboardPage = lazy(() => import('../pages/admin/DashboardPage'));
 const EnquiriesPage = lazy(() => import('../pages/admin/EnquiriesPage'));
 const ApplicationsPage = lazy(() => import('../pages/admin/ApplicationsPage'));
+const ContentStudioPage = lazy(() => import('../pages/admin/ContentStudioPage'));
 
 const RouteFallback = () => (
   <div className="min-h-screen bg-obsidian-950 flex items-center justify-center">
@@ -67,11 +69,17 @@ export const AppRouter = () => {
           <Route path="/business-health-checkup" element={<HealthCheckupPage />} />
           <Route path="/software-project-planning-guide" element={<ProjectGuidePage />} />
 
+          {/* Live system
+              Introspection: real database counts, telemetry and an endpoint
+              explorer that issues genuine API calls from the browser. */}
+          <Route path="/live-stack" element={<LiveStackPage />} />
+
           {/* Admin Dashboard */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="enquiries" element={<EnquiriesPage />} />
             <Route path="applications" element={<ApplicationsPage />} />
+            <Route path="content" element={<ContentStudioPage />} />
           </Route>
 
           {/* 404 Fallback */}
