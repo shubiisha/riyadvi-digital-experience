@@ -66,7 +66,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/riyadvi_db',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
-  ADMIN_SECRET_KEY: process.env.ADMIN_SECRET_KEY || 'riyadvi_admin_super_secret_2025',
+  ADMIN_SECRET_KEY: process.env.ADMIN_SECRET_KEY || ADMIN_SECRET_KEY_FALLBACK,
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'contact@riyadvisoftwaretechnologies.com',
   // Absolute path used to persist the resilient fallback datastore (JSON file).
   DATA_STORE_PATH: resolveDataStorePath(),
