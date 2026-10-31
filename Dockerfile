@@ -26,6 +26,11 @@ RUN VITE_API_URL=/api npm run build
 FROM node:20-alpine AS runtime
 WORKDIR /app/backend
 
+# Same OS package refresh for the image that is actually shipped: the scanner
+# reads /lib/apk/db/installed from this stage, and the node base image still
+# carries an openssl build with published Alpine CVEs.
+RUN apk upgrade --no-cache
+
 # Backend runtime deps only
 COPY backend/package.json backend/package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund
