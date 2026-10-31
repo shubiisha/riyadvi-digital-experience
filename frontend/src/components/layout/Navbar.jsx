@@ -31,6 +31,7 @@ export const Navbar = () => {
     { name: 'About', path: '/about' },
     { name: 'Blog', path: '/blog' },
     { name: 'Careers', path: '/careers' },
+    { name: 'Live Stack', path: '/live-stack' },
   ];
 
   return (
